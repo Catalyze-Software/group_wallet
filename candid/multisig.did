@@ -1,10 +1,23 @@
 type Result = variant { Ok : text; Err : text };
 type Result_1 = variant { Ok; Err : text };
-type VoteType = variant { Rejection; Approval };
+type SharedData = record {
+  status : Status;
+  votes : Votes;
+  created_at : nat64;
+  requested_by : principal;
+};
+type Status = variant { Approved; Rejected; Pending };
+type VoteType = variant { Approve; Reject };
+type Votes = record { rejections : vec principal; approvals : vec principal };
+type WhitelistRequestData = record {
+  request_type : WhitelistRequestType;
+  data : SharedData;
+};
 type WhitelistRequestType = variant { Add : principal; Remove : principal };
 service : (principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   get_whitelist : () -> (vec principal) query;
+  get_whitelist_requests : (opt Status) -> (vec WhitelistRequestData) query;
   vote_on_whitelist_request : (nat32, VoteType) -> (Result);
   whitelist_request : (WhitelistRequestType) -> (Result_1);
 }

@@ -4,7 +4,7 @@ use ic_cdk_macros::{init, query, update};
 
 use crate::{
     logic::store::Store,
-    rust_declarations::types::{VoteType, WhitelistRequestType},
+    rust_declarations::types::{Status, VoteType, WhitelistRequestData, WhitelistRequestType},
 };
 
 #[init]
@@ -24,8 +24,14 @@ pub fn __export_did_tmp_() -> String {
 
 #[update]
 #[candid_method(update)]
-fn whitelist_request(request_type: WhitelistRequestType) -> Result<(), String> {
+fn whitelist_request(request_type: WhitelistRequestType) -> Result<String, String> {
     Store::whitelist_request(caller(), request_type)
+}
+
+#[query]
+#[candid_method(query)]
+fn get_whitelist_requests(status: Option<Status>) -> Vec<WhitelistRequestData> {
+    Store::get_whitelist_requests(status)
 }
 
 #[update]

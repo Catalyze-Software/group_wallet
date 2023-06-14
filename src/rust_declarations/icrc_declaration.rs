@@ -12,7 +12,7 @@ pub struct Account {
 }
 
 #[derive(CandidType, Deserialize)]
-enum Value {
+pub enum Value {
     Int(candid::Int),
     Nat(candid::Nat),
     Blob(Vec<u8>),
@@ -25,7 +25,7 @@ pub struct Icrc1SupportedStandardsRet0Inner {
     name: String,
 }
 
-type Timestamp = u64;
+pub type Timestamp = u64;
 #[derive(CandidType, Deserialize)]
 pub struct TransferArgs {
     to: Account,
@@ -37,7 +37,7 @@ pub struct TransferArgs {
 }
 
 #[derive(CandidType, Deserialize)]
-enum TransferError {
+pub enum TransferError {
     GenericError {
         message: String,
         error_code: candid::Nat,
@@ -62,7 +62,7 @@ enum TransferError {
 }
 
 #[derive(CandidType, Deserialize)]
-enum Icrc1TransferRet0 {
+pub enum Icrc1TransferRet0 {
     Ok(candid::Nat),
     Err(TransferError),
 }

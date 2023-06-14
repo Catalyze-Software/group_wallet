@@ -24,6 +24,7 @@ pub enum Result {
 }
 
 #[derive(CandidType, Deserialize)]
+#[allow(non_snake_case)]
 pub struct Metadata {
     fee: candid::Nat,
     decimals: u8,
@@ -35,6 +36,7 @@ pub struct Metadata {
 }
 
 #[derive(CandidType, Deserialize)]
+#[allow(non_snake_case)]
 pub struct TokenInfo {
     holderNumber: u64,
     deployTime: u64,
@@ -60,7 +62,7 @@ impl SERVICE {
     ) -> CallResult<(Result,)> {
         ic_cdk::call(self.0, "approve", (arg0, arg1)).await
     }
-    pub async fn balanceOf(&self, arg0: candid::Principal) -> CallResult<(candid::Nat,)> {
+    pub async fn balance_of(&self, arg0: candid::Principal) -> CallResult<(candid::Nat,)> {
         ic_cdk::call(self.0, "balanceOf", (arg0,)).await
     }
     pub async fn burn(&self, arg0: candid::Nat) -> CallResult<(Result,)> {
@@ -69,29 +71,29 @@ impl SERVICE {
     pub async fn decimals(&self) -> CallResult<(u8,)> {
         ic_cdk::call(self.0, "decimals", ()).await
     }
-    pub async fn getAllowanceSize(&self) -> CallResult<(u64,)> {
+    pub async fn get_allowance_size(&self) -> CallResult<(u64,)> {
         ic_cdk::call(self.0, "getAllowanceSize", ()).await
     }
-    pub async fn getHolders(
+    pub async fn get_holders(
         &self,
         arg0: u64,
         arg1: u64,
     ) -> CallResult<(Vec<(candid::Principal, candid::Nat)>,)> {
         ic_cdk::call(self.0, "getHolders", (arg0, arg1)).await
     }
-    pub async fn getMetadata(&self) -> CallResult<(Metadata,)> {
+    pub async fn get_metadata(&self) -> CallResult<(Metadata,)> {
         ic_cdk::call(self.0, "getMetadata", ()).await
     }
-    pub async fn getTokenInfo(&self) -> CallResult<(TokenInfo,)> {
+    pub async fn get_token_info(&self) -> CallResult<(TokenInfo,)> {
         ic_cdk::call(self.0, "getTokenInfo", ()).await
     }
-    pub async fn getUserApprovals(
+    pub async fn get_user_approvals(
         &self,
         arg0: candid::Principal,
     ) -> CallResult<(Vec<(candid::Principal, candid::Nat)>,)> {
         ic_cdk::call(self.0, "getUserApprovals", (arg0,)).await
     }
-    pub async fn historySize(&self) -> CallResult<(u64,)> {
+    pub async fn history_size(&self) -> CallResult<(u64,)> {
         ic_cdk::call(self.0, "historySize", ()).await
     }
     pub async fn logo(&self) -> CallResult<(String,)> {
@@ -106,25 +108,25 @@ impl SERVICE {
     pub async fn owner(&self) -> CallResult<(candid::Principal,)> {
         ic_cdk::call(self.0, "owner", ()).await
     }
-    pub async fn setFee(&self, arg0: candid::Nat) -> CallResult<()> {
+    pub async fn set_fee(&self, arg0: candid::Nat) -> CallResult<()> {
         ic_cdk::call(self.0, "setFee", (arg0,)).await
     }
-    pub async fn setFeeTo(&self, arg0: candid::Principal) -> CallResult<()> {
+    pub async fn set_fee_too(&self, arg0: candid::Principal) -> CallResult<()> {
         ic_cdk::call(self.0, "setFeeTo", (arg0,)).await
     }
-    pub async fn setLogo(&self, arg0: String) -> CallResult<()> {
+    pub async fn set_logo(&self, arg0: String) -> CallResult<()> {
         ic_cdk::call(self.0, "setLogo", (arg0,)).await
     }
-    pub async fn setName(&self, arg0: String) -> CallResult<()> {
+    pub async fn set_name(&self, arg0: String) -> CallResult<()> {
         ic_cdk::call(self.0, "setName", (arg0,)).await
     }
-    pub async fn setOwner(&self, arg0: candid::Principal) -> CallResult<()> {
+    pub async fn set_owner(&self, arg0: candid::Principal) -> CallResult<()> {
         ic_cdk::call(self.0, "setOwner", (arg0,)).await
     }
     pub async fn symbol(&self) -> CallResult<(String,)> {
         ic_cdk::call(self.0, "symbol", ()).await
     }
-    pub async fn totalSupply(&self) -> CallResult<(candid::Nat,)> {
+    pub async fn total_supply(&self) -> CallResult<(candid::Nat,)> {
         ic_cdk::call(self.0, "totalSupply", ()).await
     }
     pub async fn transfer(
@@ -134,7 +136,7 @@ impl SERVICE {
     ) -> CallResult<(Result,)> {
         ic_cdk::call(self.0, "transfer", (arg0, arg1)).await
     }
-    pub async fn transferFrom(
+    pub async fn transfer_from(
         &self,
         arg0: candid::Principal,
         arg1: candid::Principal,

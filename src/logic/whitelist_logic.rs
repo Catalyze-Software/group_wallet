@@ -15,10 +15,30 @@ impl Store {
         })
     }
 
+    pub fn get_whitelist_requests(status: Option<Status>) -> Vec<WhitelistRequestData> {
+        DATA.with(|data| {
+            let data = data.borrow();
+            let mut whitelist_requests = data
+                .whitelist_requests
+                .values()
+                .filter(|request| {
+                    if let Some(status) = status.clone() {
+                        request.data.status == status
+                    } else {
+                        true
+                    }
+                })
+                .cloned()
+                .collect::<Vec<WhitelistRequestData>>();
+            whitelist_requests.sort_by(|a, b| a.data.created_at.cmp(&b.data.created_at));
+            whitelist_requests
+        })
+    }
+
     pub fn whitelist_request(
         caller: Principal,
         request_type: WhitelistRequestType,
-    ) -> Result<(), String> {
+    ) -> Result<String, String> {
         if let Err(err) = Self::is_whitelisted(&caller) {
             return Err(err);
         }
@@ -27,17 +47,17 @@ impl Store {
             return Err(err);
         }
 
-        DATA.with(|data| {
+        let id = DATA.with(|data| {
             let mut data = data.borrow_mut();
             let whitelist_request_id = data.whitelist_request_id;
             data.whitelist_request_id += 1;
 
-            let transaction_data = WhitelistRequestData {
+            let whitelist_data = WhitelistRequestData {
                 request_type,
                 data: SharedData {
                     status: Status::Pending,
                     votes: Votes {
-                        approvals: vec![caller],
+                        approvals: vec![],
                         rejections: vec![],
                     },
                     requested_by: caller,
@@ -45,10 +65,11 @@ impl Store {
                 },
             };
             data.whitelist_requests
-                .insert(whitelist_request_id, transaction_data);
+                .insert(whitelist_request_id.clone(), whitelist_data.clone());
+            whitelist_request_id
+        });
 
-            Ok(())
-        })
+        Self::vote_on_whitelist_request(caller, id, VoteType::Approve)
     }
 
     pub fn vote_on_whitelist_request(
@@ -58,6 +79,11 @@ impl Store {
     ) -> Result<String, String> {
         let result = DATA.with(|data| {
             let mut data = data.borrow_mut();
+
+            if !data.whitelist.contains(&caller) {
+                return Err("Caller is not whitelisted".to_string());
+            }
+
             let whitelist_request = data
                 .whitelist_requests
                 .get_mut(&request_id)
