@@ -1,5 +1,4 @@
 type Result = variant { Ok : text; Err : text };
-type Result_1 = variant { Ok; Err : text };
 type SharedData = record {
   status : Status;
   votes : Votes;
@@ -19,5 +18,5 @@ service : (principal) -> {
   get_whitelist : () -> (vec principal) query;
   get_whitelist_requests : (opt Status) -> (vec WhitelistRequestData) query;
   vote_on_whitelist_request : (nat32, VoteType) -> (Result);
-  whitelist_request : (WhitelistRequestType) -> (Result_1);
+  whitelist_request : (WhitelistRequestType) -> (Result);
 }

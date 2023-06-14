@@ -1,9 +1,9 @@
 use candid::{candid_method, Principal};
-use ic_cdk::caller;
-use ic_cdk_macros::{init, query, update};
+use ic_cdk::{caller, storage};
+use ic_cdk_macros::{init, post_upgrade, pre_upgrade, query, update};
 
 use crate::{
-    logic::store::Store,
+    logic::store::{Store, DATA},
     rust_declarations::types::{Status, VoteType, WhitelistRequestData, WhitelistRequestType},
 };
 
@@ -11,6 +11,17 @@ use crate::{
 #[candid_method(init)]
 pub fn init(owner: Principal) {
     Store::init(owner);
+}
+
+#[pre_upgrade]
+pub fn pre_upgrade() {
+    DATA.with(|data| storage::stable_save((&*data.borrow(),)).unwrap());
+}
+
+#[post_upgrade]
+pub fn post_upgrade() {
+    let (old_store,): (Store,) = storage::stable_restore().unwrap();
+    DATA.with(|data| *data.borrow_mut() = old_store);
 }
 
 // Hacky way to expose the candid interface to the outside world

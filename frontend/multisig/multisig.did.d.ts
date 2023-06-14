@@ -3,8 +3,6 @@ import type { ActorMethod } from '@dfinity/agent';
 
 export type Result = { 'Ok' : string } |
   { 'Err' : string };
-export type Result_1 = { 'Ok' : null } |
-  { 'Err' : string };
 export interface SharedData {
   'status' : Status,
   'votes' : Votes,
@@ -34,5 +32,5 @@ export interface _SERVICE {
     Array<WhitelistRequestData>
   >,
   'vote_on_whitelist_request' : ActorMethod<[number, VoteType], Result>,
-  'whitelist_request' : ActorMethod<[WhitelistRequestType], Result_1>,
+  'whitelist_request' : ActorMethod<[WhitelistRequestType], Result>,
 }
