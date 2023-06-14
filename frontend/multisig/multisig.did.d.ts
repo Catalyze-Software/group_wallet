@@ -1,7 +1,17 @@
 import type { Principal } from '@dfinity/principal';
 import type { ActorMethod } from '@dfinity/agent';
 
+export type Result = { 'Ok' : string } |
+  { 'Err' : string };
+export type Result_1 = { 'Ok' : null } |
+  { 'Err' : string };
+export type VoteType = { 'Rejection' : null } |
+  { 'Approval' : null };
+export type WhitelistRequestType = { 'Add' : Principal } |
+  { 'Remove' : Principal };
 export interface _SERVICE {
   '__get_candid_interface_tmp_hack' : ActorMethod<[], string>,
-  'test' : ActorMethod<[], string>,
+  'get_whitelist' : ActorMethod<[], Array<Principal>>,
+  'vote_on_whitelist_request' : ActorMethod<[number, VoteType], Result>,
+  'whitelist_request' : ActorMethod<[WhitelistRequestType], Result_1>,
 }

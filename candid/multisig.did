@@ -1,4 +1,10 @@
-service : () -> {
+type Result = variant { Ok : text; Err : text };
+type Result_1 = variant { Ok; Err : text };
+type VoteType = variant { Rejection; Approval };
+type WhitelistRequestType = variant { Add : principal; Remove : principal };
+service : (principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
-  test : () -> (text) query;
+  get_whitelist : () -> (vec principal) query;
+  vote_on_whitelist_request : (nat32, VoteType) -> (Result);
+  whitelist_request : (WhitelistRequestType) -> (Result_1);
 }

@@ -1,2 +1,12 @@
 pub mod methods;
-pub mod store;
+
+pub mod logic {
+    pub mod store;
+    pub mod transfer_logic;
+    pub mod whitelist_logic;
+}
+pub mod rust_declarations {
+    pub mod dip20_declaration;
+    pub mod icrc_declaration;
+    pub mod types;
+}
