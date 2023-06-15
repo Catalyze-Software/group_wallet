@@ -1,3 +1,5 @@
+type Account = record { owner : principal; subaccount : opt vec nat8 };
+type Dip20TransferArgs = record { to : principal; amount : nat64 };
 type Result = variant { Ok : text; Err : text };
 type SharedData = record {
   id : nat32;
@@ -7,6 +9,23 @@ type SharedData = record {
   requested_by : principal;
 };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
+type TransactionRequestData = record {
+  args : TransferRequestType;
+  data : SharedData;
+  canister_id : principal;
+};
+type TransferArgs = record {
+  to : Account;
+  fee : opt nat;
+  memo : opt vec nat8;
+  from_subaccount : opt vec nat8;
+  created_at_time : opt nat64;
+  amount : nat;
+};
+type TransferRequestType = variant {
+  ICRC1 : TransferArgs;
+  DIP20 : Dip20TransferArgs;
+};
 type VoteType = variant { Approve; Reject };
 type Votes = record { rejections : vec principal; approvals : vec principal };
 type WhitelistRequestData = record {
@@ -16,8 +35,11 @@ type WhitelistRequestData = record {
 type WhitelistRequestType = variant { Add : principal; Remove : principal };
 service : (principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
+  get_transaction_requests : (opt Status) -> (vec TransactionRequestData) query;
   get_whitelist : () -> (vec principal) query;
   get_whitelist_requests : (opt Status) -> (vec WhitelistRequestData) query;
+  transaction_request : (principal, TransferRequestType) -> (Result);
+  vote_on_transaction_request : (nat32, VoteType) -> (Result);
   vote_on_whitelist_request : (nat32, VoteType) -> (Result);
   whitelist_request : (WhitelistRequestType) -> (Result);
 }
