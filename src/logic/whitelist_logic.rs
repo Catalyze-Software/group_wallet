@@ -49,6 +49,18 @@ impl Store {
             return Err(err);
         }
 
+        if let WhitelistRequestType::Add(principal) = &request_type {
+            if let Ok(_) = Self::is_whitelisted(principal) {
+                return Err("Principal already whitelisted".to_string());
+            }
+        }
+
+        if let WhitelistRequestType::Remove(principal) = &request_type {
+            if let Err(_) = Self::is_whitelisted(principal) {
+                return Err("Principal not whitelisted".to_string());
+            }
+        }
+
         let id = DATA.with(|data| {
             let mut data = data.borrow_mut();
             let whitelist_request_id = data.whitelist_request_id;
@@ -138,12 +150,16 @@ impl Store {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
 
-            let whitelist = data.whitelist.clone();
+            let mut whitelist = data.whitelist.clone();
 
             let whitelist_request = data
                 .whitelist_requests
                 .get_mut(&request_id)
                 .ok_or("Whitelist request not found".to_string())?;
+
+            if let WhitelistRequestType::Remove(principal) = whitelist_request.request_type {
+                whitelist = whitelist.into_iter().filter(|p| p != &principal).collect();
+            }
 
             let whitelist_count = whitelist.len() as u32;
             let approval_count = whitelist_request.data.votes.approvals.len() as u32;
