@@ -4,13 +4,16 @@ import type { ActorMethod } from '@dfinity/agent';
 export type Result = { 'Ok' : string } |
   { 'Err' : string };
 export interface SharedData {
+  'id' : number,
   'status' : Status,
   'votes' : Votes,
   'created_at' : bigint,
   'requested_by' : Principal,
 }
-export type Status = { 'Approved' : null } |
+export type Status = { 'Deadlock' : null } |
+  { 'Approved' : null } |
   { 'Rejected' : null } |
+  { 'Expired' : null } |
   { 'Pending' : null };
 export type VoteType = { 'Approve' : null } |
   { 'Reject' : null };

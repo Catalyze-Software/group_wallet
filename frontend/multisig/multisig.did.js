@@ -1,7 +1,9 @@
 export const idlFactory = ({ IDL }) => {
   const Status = IDL.Variant({
+    'Deadlock' : IDL.Null,
     'Approved' : IDL.Null,
     'Rejected' : IDL.Null,
+    'Expired' : IDL.Null,
     'Pending' : IDL.Null,
   });
   const WhitelistRequestType = IDL.Variant({
@@ -13,6 +15,7 @@ export const idlFactory = ({ IDL }) => {
     'approvals' : IDL.Vec(IDL.Principal),
   });
   const SharedData = IDL.Record({
+    'id' : IDL.Nat32,
     'status' : Status,
     'votes' : Votes,
     'created_at' : IDL.Nat64,

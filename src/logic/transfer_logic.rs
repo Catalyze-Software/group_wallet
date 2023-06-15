@@ -11,7 +11,6 @@ impl Store {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
             let transaction_id = data.transaction_request_id;
-            data.transaction_request_id += 1;
 
             let transaction_data = TransactionRequestData {
                 args,
@@ -23,8 +22,10 @@ impl Store {
                     },
                     requested_by: caller,
                     created_at: time(),
+                    id: transaction_id,
                 },
             };
+            data.transaction_request_id += 1;
             data.transaction_requests
                 .insert(transaction_id, transaction_data);
         });

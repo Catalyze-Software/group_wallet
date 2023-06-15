@@ -1,11 +1,12 @@
 type Result = variant { Ok : text; Err : text };
 type SharedData = record {
+  id : nat32;
   status : Status;
   votes : Votes;
   created_at : nat64;
   requested_by : principal;
 };
-type Status = variant { Approved; Rejected; Pending };
+type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type VoteType = variant { Approve; Reject };
 type Votes = record { rejections : vec principal; approvals : vec principal };
 type WhitelistRequestData = record {

@@ -4,8 +4,10 @@ use ic_cdk::api::time;
 use crate::logic::store::{Store, DATA};
 
 use crate::rust_declarations::types::{
-    SharedData, Status, VoteType, Votes, WhitelistRequestData, WhitelistRequestType,
+    SharedData, Status, VoteResponse, VoteType, Votes, WhitelistRequestData, WhitelistRequestType,
 };
+
+use super::store::DAY_IN_NANOS;
 
 impl Store {
     pub fn get_whitelist() -> Vec<Principal> {
@@ -50,11 +52,11 @@ impl Store {
         let id = DATA.with(|data| {
             let mut data = data.borrow_mut();
             let whitelist_request_id = data.whitelist_request_id;
-            data.whitelist_request_id += 1;
 
             let whitelist_data = WhitelistRequestData {
                 request_type,
                 data: SharedData {
+                    id: whitelist_request_id,
                     status: Status::Pending,
                     votes: Votes {
                         approvals: vec![],
@@ -64,6 +66,7 @@ impl Store {
                     created_at: time(),
                 },
             };
+            data.whitelist_request_id += 1;
             data.whitelist_requests
                 .insert(whitelist_request_id.clone(), whitelist_data.clone());
             whitelist_request_id
@@ -77,6 +80,9 @@ impl Store {
         request_id: u32,
         vote: VoteType,
     ) -> Result<String, String> {
+        // expire whitelist requests
+        Self::expire_whitelist_requests();
+
         let result = DATA.with(|data| {
             let mut data = data.borrow_mut();
 
@@ -109,10 +115,16 @@ impl Store {
         match result {
             Ok(_) => {
                 if let Ok(vote_type) = Self::get_request_majority(request_id) {
-                    if vote_type == VoteType::Approve {
-                        return Self::approve_whitelist_request(request_id);
-                    } else {
-                        return Self::reject_whitelist_request(request_id);
+                    match vote_type {
+                        VoteResponse::Approve => {
+                            return Self::approve_whitelist_request(request_id);
+                        }
+                        VoteResponse::Reject => {
+                            return Self::reject_whitelist_request(request_id, false);
+                        }
+                        VoteResponse::Deadlock => {
+                            return Self::reject_whitelist_request(request_id, true);
+                        }
                     }
                 } else {
                     return Ok("No marjority reached yet".to_string());
@@ -122,7 +134,7 @@ impl Store {
         }
     }
 
-    fn get_request_majority(request_id: u32) -> Result<VoteType, String> {
+    fn get_request_majority(request_id: u32) -> Result<VoteResponse, String> {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
 
@@ -140,9 +152,13 @@ impl Store {
             let majority = (whitelist_count / 2) + 1;
 
             if approval_count >= majority {
-                return Ok(VoteType::Approve);
+                return Ok(VoteResponse::Approve);
             } else if rejection_count >= majority {
-                return Ok(VoteType::Reject);
+                return Ok(VoteResponse::Reject);
+            } else if approval_count == (whitelist_count / 2)
+                && rejection_count == (whitelist_count / 2)
+            {
+                return Ok(VoteResponse::Deadlock);
             } else {
                 return Err("No marjority reached".to_string());
             }
@@ -192,7 +208,7 @@ impl Store {
         })
     }
 
-    fn reject_whitelist_request(request_id: u32) -> Result<String, String> {
+    fn reject_whitelist_request(request_id: u32, deadlock: bool) -> Result<String, String> {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
             let whitelist_request = data
@@ -200,8 +216,13 @@ impl Store {
                 .get_mut(&request_id)
                 .ok_or("Whitelist request not found".to_string())?;
 
-            whitelist_request.data.status = Status::Rejected;
-            Ok("Whitelist request rejected".to_string())
+            if deadlock {
+                whitelist_request.data.status = Status::Deadlock;
+                return Ok("Whitelist request deadlocked".to_string());
+            } else {
+                whitelist_request.data.status = Status::Rejected;
+                return Ok("Whitelist request rejected".to_string());
+            }
         })
     }
 
@@ -227,6 +248,27 @@ impl Store {
             }
 
             return Ok(());
+        })
+    }
+
+    pub fn expire_whitelist_requests() {
+        DATA.with(|data| {
+            let mut data = data.borrow_mut();
+            let whitelist_requests = &mut data.whitelist_requests;
+
+            let expired_requests: Vec<u32> = whitelist_requests
+                .iter_mut()
+                .filter(|(_, request)| {
+                    (request.data.created_at + DAY_IN_NANOS) < time()
+                        && request.data.status == Status::Pending
+                })
+                .map(|(id, _)| *id)
+                .collect();
+
+            for request_id in expired_requests {
+                let request = whitelist_requests.get_mut(&request_id).unwrap();
+                request.data.status = Status::Expired;
+            }
         })
     }
 }

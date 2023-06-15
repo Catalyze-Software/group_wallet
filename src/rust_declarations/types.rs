@@ -33,6 +33,13 @@ pub enum VoteType {
     Reject,
 }
 
+#[derive(CandidType, Deserialize, PartialEq, Eq)]
+pub enum VoteResponse {
+    Approve,
+    Reject,
+    Deadlock,
+}
+
 #[derive(CandidType, Deserialize, PartialEq, Eq, Clone)]
 pub enum WhitelistRequestType {
     Add(Principal),
@@ -41,6 +48,7 @@ pub enum WhitelistRequestType {
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct SharedData {
+    pub id: u32,
     pub status: Status,
     pub votes: Votes,
     pub requested_by: Principal,
@@ -58,4 +66,6 @@ pub enum Status {
     Pending,
     Approved,
     Rejected,
+    Expired,
+    Deadlock,
 }
