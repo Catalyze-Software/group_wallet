@@ -2,7 +2,7 @@ pub mod methods;
 
 pub mod logic {
     pub mod store;
-    pub mod transfer_logic;
+    pub mod transaction_logic;
     pub mod whitelist_logic;
 }
 pub mod rust_declarations {

@@ -15,7 +15,7 @@ use crate::rust_declarations::types::{
 use super::store::DAY_IN_NANOS;
 
 impl Store {
-    pub async fn get_transaction_requests(status: Option<Status>) -> Vec<TransactionRequestData> {
+    pub fn get_transaction_requests(status: Option<Status>) -> Vec<TransactionRequestData> {
         DATA.with(|data| {
             let data = data.borrow();
             let mut transaction_requests = data

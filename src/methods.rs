@@ -4,7 +4,10 @@ use ic_cdk_macros::{init, post_upgrade, pre_upgrade, query, update};
 
 use crate::{
     logic::store::{Store, DATA},
-    rust_declarations::types::{Status, VoteType, WhitelistRequestData, WhitelistRequestType},
+    rust_declarations::types::{
+        Status, TransactionRequestData, TransferRequestType, VoteType, WhitelistRequestData,
+        WhitelistRequestType,
+    },
 };
 
 #[init]
@@ -33,6 +36,9 @@ pub fn __export_did_tmp_() -> String {
     __export_service()
 }
 
+///////////////
+// WHITELIST //
+///////////////
 #[update]
 #[candid_method(update)]
 fn whitelist_request(request_type: WhitelistRequestType) -> Result<String, String> {
@@ -55,6 +61,33 @@ fn vote_on_whitelist_request(request_id: u32, vote_type: VoteType) -> Result<Str
 #[candid_method(query)]
 fn get_whitelist() -> Vec<Principal> {
     Store::get_whitelist()
+}
+
+/////////////////
+// TRANSACTION //
+/////////////////
+#[update]
+#[candid_method(update)]
+async fn transaction_request(
+    canister_id: Principal,
+    request_type: TransferRequestType,
+) -> Result<String, String> {
+    Store::transaction_request(caller(), canister_id, request_type).await
+}
+
+#[query]
+#[candid_method(query)]
+fn get_transaction_requests(status: Option<Status>) -> Vec<TransactionRequestData> {
+    Store::get_transaction_requests(status)
+}
+
+#[update]
+#[candid_method(update)]
+async fn vote_on_transaction_request(
+    request_id: u32,
+    vote_type: VoteType,
+) -> Result<String, String> {
+    Store::vote_on_transaction_request(caller(), request_id, vote_type).await
 }
 
 // Method used to save the candid interface to a file
