@@ -3,19 +3,20 @@ use serde::Deserialize;
 
 use super::icrc_declaration::TransferArgs;
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub struct TransactionRequestData {
     pub args: TransferRequestType,
+    pub canister_id: Principal,
     pub data: SharedData,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub struct Dip20TransferArgs {
     pub to: Principal,
-    pub value: u64,
+    pub amount: u64,
 }
 
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub enum TransferRequestType {
     DIP20(Dip20TransferArgs),
     ICRC1(TransferArgs),

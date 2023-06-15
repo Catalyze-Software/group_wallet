@@ -5,10 +5,10 @@ use ic_cdk::api::call::CallResult;
 use ic_cdk::export::candid::{self, CandidType, Deserialize};
 
 type Subaccount = Vec<u8>;
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub struct Account {
-    owner: candid::Principal,
-    subaccount: Option<Subaccount>,
+    pub owner: candid::Principal,
+    pub subaccount: Option<Subaccount>,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -26,14 +26,14 @@ pub struct Icrc1SupportedStandardsRet0Inner {
 }
 
 pub type Timestamp = u64;
-#[derive(CandidType, Deserialize)]
+#[derive(CandidType, Deserialize, Clone)]
 pub struct TransferArgs {
-    to: Account,
-    fee: Option<candid::Nat>,
-    memo: Option<Vec<u8>>,
-    from_subaccount: Option<Subaccount>,
-    created_at_time: Option<Timestamp>,
-    amount: candid::Nat,
+    pub to: Account,
+    pub fee: Option<candid::Nat>,
+    pub memo: Option<Vec<u8>>,
+    pub from_subaccount: Option<Subaccount>,
+    pub created_at_time: Option<Timestamp>,
+    pub amount: candid::Nat,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -67,8 +67,8 @@ pub enum Icrc1TransferRet0 {
     Err(TransferError),
 }
 
-pub struct SERVICE(candid::Principal);
-impl SERVICE {
+pub struct IcrcService(pub candid::Principal);
+impl IcrcService {
     pub async fn icrc1_balance_of(&self, arg0: Account) -> CallResult<(candid::Nat,)> {
         ic_cdk::call(self.0, "icrc1_balance_of", (arg0,)).await
     }

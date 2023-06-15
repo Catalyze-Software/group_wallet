@@ -46,8 +46,8 @@ pub struct TokenInfo {
     feeTo: candid::Principal,
 }
 
-pub struct SERVICE(candid::Principal);
-impl SERVICE {
+pub struct Dip20Service(pub candid::Principal);
+impl Dip20Service {
     pub async fn allowance(
         &self,
         arg0: candid::Principal,

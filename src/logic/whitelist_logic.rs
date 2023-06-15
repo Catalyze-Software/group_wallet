@@ -93,7 +93,7 @@ impl Store {
         vote: VoteType,
     ) -> Result<String, String> {
         // expire whitelist requests
-        Self::expire_whitelist_requests();
+        Self::expire_transaction_requests();
 
         let result = DATA.with(|data| {
             let mut data = data.borrow_mut();
@@ -126,7 +126,7 @@ impl Store {
 
         match result {
             Ok(_) => {
-                if let Ok(vote_type) = Self::get_request_majority(request_id) {
+                if let Ok(vote_type) = Self::get_whitelist_request_majority(request_id) {
                     match vote_type {
                         VoteResponse::Approve => {
                             return Self::approve_whitelist_request(request_id);
@@ -146,7 +146,7 @@ impl Store {
         }
     }
 
-    fn get_request_majority(request_id: u32) -> Result<VoteResponse, String> {
+    fn get_whitelist_request_majority(request_id: u32) -> Result<VoteResponse, String> {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
 
