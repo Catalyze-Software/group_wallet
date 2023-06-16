@@ -4,22 +4,25 @@ use candid::{CandidType, Principal};
 
 use serde::Deserialize;
 
-use crate::rust_declarations::types::{TransactionRequestData, Votes, WhitelistRequestData};
+use crate::rust_declarations::types::{
+    TokenStandard, TransactionRequestData, Votes, WhitelistRequestData,
+};
 
 pub static DAY_IN_NANOS: u64 = Duration::from_secs(1 * 24 * 60 * 60).as_nanos() as u64;
 
 #[derive(Deserialize, CandidType)]
 pub struct Store {
     pub owner: Principal,
+
     pub whitelist: Vec<Principal>,
-
-    pub transaction_request_id: u32,
-    pub transaction_requests: HashMap<u32, TransactionRequestData>,
-    pub transaction_request_expiry: u64,
-
     pub whitelist_request_id: u32,
     pub whitelist_requests: HashMap<u32, WhitelistRequestData>,
     pub whitelist_request_expiry: u64,
+
+    pub tokens: HashMap<Principal, TokenStandard>,
+    pub transaction_request_id: u32,
+    pub transaction_requests: HashMap<u32, TransactionRequestData>,
+    pub transaction_request_expiry: u64,
 }
 
 impl Default for Store {
@@ -27,14 +30,14 @@ impl Default for Store {
         Self {
             owner: Principal::anonymous(),
             whitelist: Default::default(),
-
-            transaction_request_id: 0,
-            transaction_requests: Default::default(),
-            transaction_request_expiry: DAY_IN_NANOS,
-
             whitelist_request_id: 0,
             whitelist_requests: Default::default(),
             whitelist_request_expiry: DAY_IN_NANOS,
+
+            tokens: Default::default(),
+            transaction_request_id: 0,
+            transaction_requests: Default::default(),
+            transaction_request_expiry: DAY_IN_NANOS,
         }
     }
 }
@@ -50,6 +53,44 @@ impl Store {
             data.owner = owner.clone();
             data.whitelist.push(owner);
         });
+    }
+
+    pub fn get_token_list() -> Vec<(Principal, TokenStandard)> {
+        DATA.with(|data| {
+            let data = data.borrow();
+            data.tokens
+                .iter()
+                .map(|(canister_id, standard)| (canister_id.clone(), standard.clone()))
+                .collect()
+        })
+    }
+
+    pub fn add_token_to_list(
+        caller: Principal,
+        canister_id: Principal,
+        standard: TokenStandard,
+    ) -> Result<(), String> {
+        if let Err(err) = Self::is_whitelisted(&caller) {
+            return Err(err);
+        }
+
+        DATA.with(|data| {
+            let mut data = data.borrow_mut();
+            data.tokens.insert(canister_id, standard);
+        });
+        Ok(())
+    }
+
+    pub fn remove_token_from_list(caller: Principal, canister_id: Principal) -> Result<(), String> {
+        if let Err(err) = Self::is_whitelisted(&caller) {
+            return Err(err);
+        }
+
+        DATA.with(|data| {
+            let mut data = data.borrow_mut();
+            data.tokens.remove(&canister_id);
+        });
+        Ok(())
     }
 
     pub fn is_whitelisted(caller: &Principal) -> Result<(), String> {

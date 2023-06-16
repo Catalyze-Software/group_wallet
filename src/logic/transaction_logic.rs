@@ -1,7 +1,6 @@
 use candid::{Nat, Principal};
 use ic_cdk::api::time;
 use ic_cdk::id;
-use ic_ledger_types::Subaccount;
 
 use crate::logic::store::{Store, DATA};
 
@@ -9,7 +8,7 @@ use crate::rust_declarations::dip20_declaration::Dip20Service;
 use crate::rust_declarations::icrc_declaration::{Account, IcrcService, TransferArgs};
 use crate::rust_declarations::types::{
     Dip20TransferArgs, SharedData, Status, TransactionRequestData, TransferRequestType,
-    VoteResponse, VoteType, Votes, WhitelistRequestData, WhitelistRequestType,
+    VoteResponse, VoteType, Votes,
 };
 
 use super::store::DAY_IN_NANOS;

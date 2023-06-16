@@ -22,6 +22,12 @@ pub enum TransferRequestType {
     ICRC1(TransferArgs),
 }
 
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
+pub enum TokenStandard {
+    DIP20,
+    ICRC1,
+}
+
 #[derive(CandidType, Deserialize, Clone)]
 pub struct WhitelistRequestData {
     pub request_type: WhitelistRequestType,

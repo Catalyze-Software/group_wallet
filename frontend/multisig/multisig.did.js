@@ -1,4 +1,6 @@
 export const idlFactory = ({ IDL }) => {
+  const TokenStandard = IDL.Variant({ 'ICRC1' : IDL.Null, 'DIP20' : IDL.Null });
+  const Result = IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text });
   const Status = IDL.Variant({
     'Deadlock' : IDL.Null,
     'Approved' : IDL.Null,
@@ -50,10 +52,20 @@ export const idlFactory = ({ IDL }) => {
     'request_type' : WhitelistRequestType,
     'data' : SharedData,
   });
-  const Result = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
+  const Result_1 = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
   const VoteType = IDL.Variant({ 'Approve' : IDL.Null, 'Reject' : IDL.Null });
   return IDL.Service({
     '__get_candid_interface_tmp_hack' : IDL.Func([], [IDL.Text], ['query']),
+    'add_token_from_list' : IDL.Func(
+        [IDL.Principal, TokenStandard],
+        [Result],
+        [],
+      ),
+    'get_token_list' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, TokenStandard))],
+        ['query'],
+      ),
     'get_transaction_requests' : IDL.Func(
         [IDL.Opt(Status)],
         [IDL.Vec(TransactionRequestData)],
@@ -65,18 +77,23 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(WhitelistRequestData)],
         ['query'],
       ),
+    'remove_token_from_list' : IDL.Func([IDL.Principal], [Result], []),
     'transaction_request' : IDL.Func(
         [IDL.Principal, TransferRequestType],
-        [Result],
+        [Result_1],
         [],
       ),
     'vote_on_transaction_request' : IDL.Func(
         [IDL.Nat32, VoteType],
-        [Result],
+        [Result_1],
         [],
       ),
-    'vote_on_whitelist_request' : IDL.Func([IDL.Nat32, VoteType], [Result], []),
-    'whitelist_request' : IDL.Func([WhitelistRequestType], [Result], []),
+    'vote_on_whitelist_request' : IDL.Func(
+        [IDL.Nat32, VoteType],
+        [Result_1],
+        [],
+      ),
+    'whitelist_request' : IDL.Func([WhitelistRequestType], [Result_1], []),
   });
 };
 export const init = ({ IDL }) => { return [IDL.Principal]; };

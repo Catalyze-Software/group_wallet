@@ -5,8 +5,8 @@ use ic_cdk_macros::{init, post_upgrade, pre_upgrade, query, update};
 use crate::{
     logic::store::{Store, DATA},
     rust_declarations::types::{
-        Status, TransactionRequestData, TransferRequestType, VoteType, WhitelistRequestData,
-        WhitelistRequestType,
+        Status, TokenStandard, TransactionRequestData, TransferRequestType, VoteType,
+        WhitelistRequestData, WhitelistRequestType,
     },
 };
 
@@ -25,6 +25,24 @@ pub fn pre_upgrade() {
 pub fn post_upgrade() {
     let (old_store,): (Store,) = storage::stable_restore().unwrap();
     DATA.with(|data| *data.borrow_mut() = old_store);
+}
+
+#[query]
+#[candid_method(query)]
+fn get_token_list() -> Vec<(Principal, TokenStandard)> {
+    Store::get_token_list()
+}
+
+#[update]
+#[candid_method(update)]
+fn add_token_from_list(canister_id: Principal, standard: TokenStandard) -> Result<(), String> {
+    Store::add_token_to_list(caller(), canister_id, standard)
+}
+
+#[update]
+#[candid_method(update)]
+fn remove_token_from_list(canister_id: Principal) -> Result<(), String> {
+    Store::remove_token_from_list(caller(), canister_id)
 }
 
 // Hacky way to expose the candid interface to the outside world
