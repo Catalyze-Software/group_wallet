@@ -139,7 +139,7 @@ impl Store {
                         }
                     }
                 } else {
-                    return Ok("No marjority reached yet".to_string());
+                    return Err("No marjority reached".to_string());
                 }
             }
             Err(err) => return Err(err),

@@ -45,15 +45,6 @@ fn remove_token_from_list(canister_id: Principal) -> Result<(), String> {
     Store::remove_token_from_list(caller(), canister_id)
 }
 
-// Hacky way to expose the candid interface to the outside world
-#[query(name = "__get_candid_interface_tmp_hack")]
-#[candid_method(query, rename = "__get_candid_interface_tmp_hack")]
-pub fn __export_did_tmp_() -> String {
-    use candid::export_service;
-    export_service!();
-    __export_service()
-}
-
 ///////////////
 // WHITELIST //
 ///////////////
@@ -106,6 +97,15 @@ async fn vote_on_transaction_request(
     vote_type: VoteType,
 ) -> Result<String, String> {
     Store::vote_on_transaction_request(caller(), request_id, vote_type).await
+}
+
+// Hacky way to expose the candid interface to the outside world
+#[query(name = "__get_candid_interface_tmp_hack")]
+#[candid_method(query, rename = "__get_candid_interface_tmp_hack")]
+pub fn __export_did_tmp_() -> String {
+    use candid::export_service;
+    export_service!();
+    __export_service()
 }
 
 // Method used to save the candid interface to a file
