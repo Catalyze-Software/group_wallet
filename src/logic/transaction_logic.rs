@@ -43,31 +43,45 @@ impl Store {
             return Err(err);
         }
 
-        let id = DATA.with(|data| {
-            let mut data = data.borrow_mut();
-            let transaction_request_id = data.transaction_request_id;
+        let has_balance = match &args {
+            TransferRequestType::DIP20(args) => {
+                Self::balance_check_dip20(&Dip20Service(canister_id), args).await
+            }
+            TransferRequestType::ICRC1(args) => {
+                Self::balance_check_icrc(&IcrcService(canister_id), args).await
+            }
+        };
 
-            let transaction_data = TransactionRequestData {
-                args,
-                canister_id,
-                data: SharedData {
-                    id: transaction_request_id,
-                    status: Status::Pending,
-                    votes: Votes {
-                        approvals: vec![],
-                        rejections: vec![],
-                    },
-                    requested_by: caller,
-                    created_at: time(),
-                },
-            };
-            data.transaction_request_id += 1;
-            data.transaction_requests
-                .insert(transaction_request_id.clone(), transaction_data.clone());
-            transaction_request_id
-        });
+        match has_balance {
+            Err(err) => return Err(err),
+            Ok(_) => {
+                let id = DATA.with(|data| {
+                    let mut data = data.borrow_mut();
+                    let transaction_request_id = data.transaction_request_id;
 
-        Self::vote_on_transaction_request(caller, id, VoteType::Approve).await
+                    let transaction_data = TransactionRequestData {
+                        args,
+                        canister_id,
+                        data: SharedData {
+                            id: transaction_request_id,
+                            status: Status::Pending,
+                            votes: Votes {
+                                approvals: vec![],
+                                rejections: vec![],
+                            },
+                            requested_by: caller,
+                            created_at: time(),
+                        },
+                    };
+                    data.transaction_request_id += 1;
+                    data.transaction_requests
+                        .insert(transaction_request_id.clone(), transaction_data.clone());
+                    transaction_request_id
+                });
+
+                Self::vote_on_transaction_request(caller, id, VoteType::Approve).await
+            }
+        }
     }
 
     pub async fn vote_on_transaction_request(
@@ -172,7 +186,7 @@ impl Store {
                     return Ok(_request.clone());
                 }
                 None => {
-                    return Err("Whitelist request not found".to_string());
+                    return Err("Transaction request not found".to_string());
                 }
             }
         });
@@ -239,7 +253,22 @@ impl Store {
 
     async fn transfer_dip20(canister_id: Principal, args: Dip20TransferArgs) -> Result<(), String> {
         let actor = Dip20Service(canister_id);
+        match Self::balance_check_dip20(&actor, &args).await {
+            Err(err) => Err(err),
+            Ok(()) => {
+                let result = actor.transfer(args.to, Nat::from(args.amount)).await;
+                match result {
+                    Ok(_) => Ok(()),
+                    Err((_, err)) => Err(err),
+                }
+            }
+        }
+    }
 
+    async fn balance_check_dip20(
+        actor: &Dip20Service,
+        args: &Dip20TransferArgs,
+    ) -> Result<(), String> {
         let balance = actor.balance_of(id()).await;
 
         match balance {
@@ -249,12 +278,27 @@ impl Store {
                     return Err("Insufficient balance".to_string());
                 }
 
-                let result = actor.transfer(args.to, Nat::from(args.amount)).await;
+                Ok(())
+            }
+        }
+    }
 
-                match result {
-                    Ok(_) => Ok(()),
-                    Err((_, err)) => Err(err),
+    async fn balance_check_icrc(actor: &IcrcService, args: &TransferArgs) -> Result<(), String> {
+        let balance = actor
+            .icrc1_balance_of(Account {
+                owner: id(),
+                subaccount: None,
+            })
+            .await;
+
+        match balance {
+            Err((_, err)) => Err(err),
+            Ok((balance,)) => {
+                if balance < args.amount {
+                    return Err("Insufficient balance".to_string());
                 }
+
+                Ok(())
             }
         }
     }
