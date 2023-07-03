@@ -61,6 +61,7 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'get_time_out' : IDL.Func([], [IDL.Nat64], ['query']),
     'get_token_list' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Principal, TokenStandard))],

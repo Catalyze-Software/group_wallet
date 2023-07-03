@@ -54,6 +54,7 @@ export type WhitelistRequestType = { 'Add' : Principal } |
 export interface _SERVICE {
   '__get_candid_interface_tmp_hack' : ActorMethod<[], string>,
   'add_token_from_list' : ActorMethod<[Principal, TokenStandard], Result>,
+  'get_time_out' : ActorMethod<[], bigint>,
   'get_token_list' : ActorMethod<[], Array<[Principal, TokenStandard]>>,
   'get_transaction_requests' : ActorMethod<
     [[] | [Status]],

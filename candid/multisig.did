@@ -38,6 +38,7 @@ type WhitelistRequestType = variant { Add : principal; Remove : principal };
 service : (principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   add_token_from_list : (principal, TokenStandard) -> (Result);
+  get_time_out : () -> (nat64) query;
   get_token_list : () -> (vec record { principal; TokenStandard }) query;
   get_transaction_requests : (opt Status) -> (vec TransactionRequestData) query;
   get_whitelist : () -> (vec principal) query;

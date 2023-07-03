@@ -3,7 +3,7 @@ use ic_cdk::{caller, storage};
 use ic_cdk_macros::{init, post_upgrade, pre_upgrade, query, update};
 
 use crate::{
-    logic::store::{Store, DATA},
+    logic::store::{Store, DATA, DAY_IN_NANOS},
     rust_declarations::types::{
         Status, TokenStandard, TransactionRequestData, TransferRequestType, VoteType,
         WhitelistRequestData, WhitelistRequestType,
@@ -43,6 +43,12 @@ fn add_token_from_list(canister_id: Principal, standard: TokenStandard) -> Resul
 #[candid_method(update)]
 fn remove_token_from_list(canister_id: Principal) -> Result<(), String> {
     Store::remove_token_from_list(caller(), canister_id)
+}
+
+#[query]
+#[candid_method(query)]
+fn get_time_out() -> u64 {
+    DAY_IN_NANOS
 }
 
 ///////////////

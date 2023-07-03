@@ -90,7 +90,9 @@ impl Store {
         vote: VoteType,
     ) -> Result<String, String> {
         // expire whitelist requests
-        Self::expire_transaction_requests();
+        if let Err(err) = Self::expire_transaction_requests(&request_id) {
+            return Err(err);
+        }
 
         let result = DATA.with(|data| {
             let mut data = data.borrow_mut();
@@ -155,19 +157,18 @@ impl Store {
                 .get_mut(&request_id)
                 .ok_or("Transaction request not found".to_string())?;
 
-            let whitelist_count = whitelist.len() as u32;
-            let approval_count = transaction_request.data.votes.approvals.len() as u32;
-            let rejection_count = transaction_request.data.votes.rejections.len() as u32;
+            let whitelist_count = whitelist.len() as f32;
+            let approval_count = transaction_request.data.votes.approvals.len() as f32;
+            let rejection_count = transaction_request.data.votes.rejections.len() as f32;
 
-            let majority = (whitelist_count / 2) + 1;
+            let approval_percentage = (approval_count / whitelist_count) * 100.0;
+            let rejection_percentage = (rejection_count / whitelist_count) * 100.0;
 
-            if approval_count >= majority {
+            if approval_percentage > 50.0 {
                 return Ok(VoteResponse::Approve);
-            } else if rejection_count >= majority {
+            } else if rejection_percentage > 50.0 {
                 return Ok(VoteResponse::Reject);
-            } else if approval_count == (whitelist_count / 2)
-                && rejection_count == (whitelist_count / 2)
-            {
+            } else if approval_percentage == 50.0 && rejection_percentage == 50.0 {
                 return Ok(VoteResponse::Deadlock);
             } else {
                 return Err("No marjority reached".to_string());
@@ -230,23 +231,25 @@ impl Store {
         })
     }
 
-    pub fn expire_transaction_requests() {
+    pub fn expire_transaction_requests(request_id: &u32) -> Result<(), String> {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
-            let transaction_requests = &mut data.whitelist_requests;
+            let transaction_request = data.transaction_requests.get_mut(request_id);
 
-            let expired_requests: Vec<u32> = transaction_requests
-                .iter_mut()
-                .filter(|(_, request)| {
-                    (request.data.created_at + DAY_IN_NANOS) < time()
-                        && request.data.status == Status::Pending
-                })
-                .map(|(id, _)| *id)
-                .collect();
-
-            for request_id in expired_requests {
-                let request = transaction_requests.get_mut(&request_id).unwrap();
-                request.data.status = Status::Expired;
+            match transaction_request {
+                Some(_request) => {
+                    if (_request.data.created_at + DAY_IN_NANOS) < time()
+                        && _request.data.status == Status::Pending
+                    {
+                        _request.data.status = Status::Expired;
+                        return Err("Transaction request expired".to_string());
+                    } else {
+                        Ok(())
+                    }
+                }
+                None => {
+                    return Err("Whitelist request not found".to_string());
+                }
             }
         })
     }
