@@ -1,5 +1,8 @@
+use std::time::Duration;
+
 use candid::Principal;
 use ic_cdk::api::time;
+use ic_cdk::timer::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
@@ -81,7 +84,12 @@ impl Store {
             data.whitelist_request_id += 1;
             data.whitelist_requests
                 .insert(whitelist_request_id.clone(), whitelist_data.clone());
+
             whitelist_request_id
+        });
+
+        set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
+            Self::expire_whitelist_request(&id);
         });
 
         Self::vote_on_whitelist_request(caller, id, VoteType::Approve)
@@ -92,10 +100,6 @@ impl Store {
         request_id: u32,
         vote: VoteType,
     ) -> Result<String, String> {
-        if let Err(err) = Self::expire_whitelist_request(&request_id) {
-            return Err(err);
-        }
-
         let result = DATA.with(|data| {
             let mut data = data.borrow_mut();
 
@@ -267,25 +271,18 @@ impl Store {
         })
     }
 
-    pub fn expire_whitelist_request(request_id: &u32) -> Result<(), String> {
+    pub fn expire_whitelist_request(request_id: &u32) {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
             let whitelist_request = data.whitelist_requests.get_mut(request_id);
 
             match whitelist_request {
                 Some(_request) => {
-                    if (_request.data.created_at + DAY_IN_NANOS) < time()
-                        && _request.data.status == Status::Pending
-                    {
+                    if _request.data.status == Status::Pending {
                         _request.data.status = Status::Expired;
-                        return Err("Whitelist request expired".to_string());
-                    } else {
-                        Ok(())
                     }
                 }
-                None => {
-                    return Err("Whitelist request not found".to_string());
-                }
+                None => {}
             }
         })
     }

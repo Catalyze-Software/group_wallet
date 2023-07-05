@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use candid::{Nat, Principal};
 use ic_cdk::api::time;
 use ic_cdk::id;
+use ic_cdk::timer::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
@@ -79,6 +82,10 @@ impl Store {
                     transaction_request_id
                 });
 
+                set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
+                    Self::expire_transaction_requests(&id);
+                });
+
                 Self::vote_on_transaction_request(caller, id, VoteType::Approve).await
             }
         }
@@ -89,11 +96,6 @@ impl Store {
         request_id: u32,
         vote: VoteType,
     ) -> Result<String, String> {
-        // expire whitelist requests
-        if let Err(err) = Self::expire_transaction_requests(&request_id) {
-            return Err(err);
-        }
-
         let result = DATA.with(|data| {
             let mut data = data.borrow_mut();
 
@@ -231,25 +233,18 @@ impl Store {
         })
     }
 
-    pub fn expire_transaction_requests(request_id: &u32) -> Result<(), String> {
+    pub fn expire_transaction_requests(request_id: &u32) {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
             let transaction_request = data.transaction_requests.get_mut(request_id);
 
             match transaction_request {
                 Some(_request) => {
-                    if (_request.data.created_at + DAY_IN_NANOS) < time()
-                        && _request.data.status == Status::Pending
-                    {
+                    if _request.data.status == Status::Pending {
                         _request.data.status = Status::Expired;
-                        return Err("Transaction request expired".to_string());
-                    } else {
-                        Ok(())
                     }
                 }
-                None => {
-                    return Err("Whitelist request not found".to_string());
-                }
+                None => {}
             }
         })
     }
