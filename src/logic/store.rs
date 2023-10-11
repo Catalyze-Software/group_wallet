@@ -5,7 +5,8 @@ use candid::{CandidType, Principal};
 use serde::Deserialize;
 
 use crate::rust_declarations::types::{
-    TokenStandard, TransactionRequestData, Votes, WhitelistRequestData,
+    AirdropRequestData, AirdropTransactionDetails, TokenStandard, TransactionRequestData, Votes,
+    WhitelistRequestData,
 };
 
 pub static DAY_IN_NANOS: u64 = Duration::from_secs(1 * 24 * 60 * 60).as_nanos() as u64;
@@ -23,6 +24,11 @@ pub struct Store {
     pub transaction_request_id: u32,
     pub transaction_requests: HashMap<u32, TransactionRequestData>,
     pub transaction_request_expiry: u64,
+
+    pub airdrop_transactions: HashMap<u32, Vec<AirdropTransactionDetails>>,
+    pub airdrop_request_id: u32,
+    pub airdrop_requests: HashMap<u32, AirdropRequestData>,
+    pub airdrop_request_expiry: u64,
 }
 
 impl Default for Store {
@@ -38,6 +44,11 @@ impl Default for Store {
             transaction_request_id: 0,
             transaction_requests: Default::default(),
             transaction_request_expiry: DAY_IN_NANOS,
+
+            airdrop_transactions: Default::default(),
+            airdrop_request_id: 0,
+            airdrop_requests: Default::default(),
+            airdrop_request_expiry: DAY_IN_NANOS,
         }
     }
 }

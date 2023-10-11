@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use candid::Principal;
 use ic_cdk::api::time;
-use ic_cdk::timer::set_timer;
+use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
@@ -89,7 +89,7 @@ impl Store {
         });
 
         set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
-            Self::expire_whitelist_request(&id);
+            Self::expire_airdrop_request(&id);
         });
 
         Self::vote_on_whitelist_request(caller, id, VoteType::Approve)
