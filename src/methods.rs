@@ -32,7 +32,7 @@ fn get_token_list() -> Vec<(Principal, TokenStandard)> {
 }
 
 #[update]
-fn add_token_from_list(canister_id: Principal, standard: TokenStandard) -> Result<(), String> {
+fn add_token_to_list(canister_id: Principal, standard: TokenStandard) -> Result<(), String> {
     Store::add_token_to_list(caller(), canister_id, standard)
 }
 
