@@ -51,8 +51,9 @@ type WhitelistRequestData = record {
 type WhitelistRequestType = variant { Add : principal; Remove : principal };
 service : (principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
-  add_token_from_list : (principal, TokenStandard) -> (Result);
+  add_token_to_list : (principal, TokenStandard) -> (Result);
   airdrop_request : (principal, vec TransferRequestType) -> (Result_1);
+  get_airdrop_error : (nat32) -> (Result_1) query;
   get_airdrop_requests : (opt Status) -> (vec AirdropRequestData) query;
   get_airdrop_transactions : (nat32) -> (Result_2) query;
   get_time_out : () -> (nat64) query;

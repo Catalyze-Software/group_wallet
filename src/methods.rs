@@ -109,6 +109,11 @@ fn get_airdrop_requests(status: Option<Status>) -> Vec<AirdropRequestData> {
     Store::get_airdrop_requests(status)
 }
 
+#[query]
+fn get_airdrop_error(request_id: u32) -> Result<String, String> {
+    Store::get_airdrop_error(caller(), request_id)
+}
+
 #[update]
 async fn vote_on_airdrop_request(request_id: u32, vote_type: VoteType) -> Result<String, String> {
     Store::vote_on_airdrop_request(caller(), request_id, vote_type).await

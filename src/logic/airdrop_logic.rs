@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::Duration;
 
 use candid::{Nat, Principal};
@@ -86,7 +87,12 @@ impl Store {
             Self::expire_airdrop_request(&id);
         });
 
-        Self::vote_on_whitelist_request(caller, id, VoteType::Approve)
+        ic_cdk::spawn(Self::_vote_on_airdrop_request(
+            caller,
+            id,
+            VoteType::Approve,
+        ));
+        Ok("Airdrop request created".to_string())
     }
 
     pub fn get_airdrop_transactions(
@@ -104,10 +110,17 @@ impl Store {
                 .airdrop_transactions
                 .get(&request_id)
                 .cloned()
-                .unwrap_or(vec![]);
+                .unwrap_or(HashMap::default())
+                .values()
+                .cloned()
+                .collect::<Vec<AirdropTransactionDetails>>();
 
             Ok(result)
         })
+    }
+
+    pub async fn _vote_on_airdrop_request(caller: Principal, request_id: u32, vote: VoteType) {
+        let _ = Self::vote_on_airdrop_request(caller, request_id, vote).await;
     }
 
     pub async fn vote_on_airdrop_request(
@@ -149,18 +162,8 @@ impl Store {
                 if let Ok(vote_type) = Self::get_airdrop_request_majority(request_id) {
                     match vote_type {
                         VoteResponse::Approve => {
-                            let result = Self::approve_airdrop_request(request_id).await;
-                            match result {
-                                Ok(transactions) => DATA.with(|d| {
-                                    d.borrow_mut()
-                                        .airdrop_transactions
-                                        .insert(request_id, transactions);
-                                    return Ok("Airdrop request approved".to_string());
-                                }),
-                                Err(err) => {
-                                    return Err(err);
-                                }
-                            }
+                            ic_cdk::spawn(Self::approve_airdrop_request(request_id));
+                            Ok("Airdrop request approved".to_string())
                         }
                         VoteResponse::Reject => {
                             return Self::reject_airdrop_request(request_id, false);
@@ -170,7 +173,7 @@ impl Store {
                         }
                     }
                 } else {
-                    return Err("No marjority reached".to_string());
+                    return Err("No majority reached".to_string());
                 }
             }
             Err(err) => return Err(err),
@@ -186,7 +189,7 @@ impl Store {
             let airdrop_request = data
                 .airdrop_requests
                 .get_mut(&request_id)
-                .ok_or("Whitelist request not found".to_string())?;
+                .ok_or("Airdrop request not found".to_string())?;
 
             let whitelist_count = whitelist.len() as f32;
             let approval_count = airdrop_request.data.votes.approvals.len() as f32;
@@ -202,14 +205,12 @@ impl Store {
             } else if approval_percentage == 50.0 && rejection_percentage == 50.0 {
                 return Ok(VoteResponse::Deadlock);
             } else {
-                return Err("No marjority reached".to_string());
+                return Err("No majority reached".to_string());
             }
         })
     }
 
-    async fn approve_airdrop_request(
-        request_id: u32,
-    ) -> Result<Vec<AirdropTransactionDetails>, String> {
+    async fn approve_airdrop_request(request_id: u32) -> () {
         let request = DATA.with(|data| {
             let mut data = data.borrow_mut();
             let airdrop_request = data.airdrop_requests.get_mut(&request_id);
@@ -220,36 +221,54 @@ impl Store {
                     return Ok(_request.clone());
                 }
                 None => {
-                    return Err("Whitelist request not found".to_string());
+                    return Err("Airdrop request not found".to_string());
                 }
             }
         });
 
         match request {
-            Err(err) => Err(err),
+            Err(err) => {
+                let _ = DATA.with(|data| data.borrow_mut().airdrop_error.insert(request_id, err));
+            }
             Ok(_request) => {
-                let mut transaction_results: Vec<AirdropTransactionDetails> = vec![];
-
                 for args in _request.tranfer_args {
                     match args {
                         TransferRequestType::DIP20(_args) => {
                             if let Ok(_) =
                                 Store::transfer_dip20(_request.canister_id, _args.clone()).await
                             {
-                                transaction_results.push(AirdropTransactionDetails {
+                                let details = AirdropTransactionDetails {
                                     status: Status::Approved,
                                     receiver: _args.to,
                                     amount: Amount::DIP20(_args.amount),
                                     canister_id: _request.canister_id,
                                     token_standard: TokenStandard::DIP20,
+                                };
+
+                                DATA.with(|_data| {
+                                    _data
+                                        .borrow_mut()
+                                        .airdrop_transactions
+                                        .entry(request_id)
+                                        .or_insert(HashMap::default())
+                                        .insert(_args.to, details);
                                 });
                             } else {
-                                transaction_results.push(AirdropTransactionDetails {
+                                let details = AirdropTransactionDetails {
                                     status: Status::Rejected,
                                     receiver: _args.to,
                                     amount: Amount::DIP20(_args.amount),
                                     canister_id: _request.canister_id,
                                     token_standard: TokenStandard::DIP20,
+                                };
+
+                                DATA.with(|_data| {
+                                    _data
+                                        .borrow_mut()
+                                        .airdrop_transactions
+                                        .entry(request_id)
+                                        .or_insert(HashMap::default())
+                                        .insert(_args.to, details);
                                 });
                             }
                         }
@@ -257,26 +276,43 @@ impl Store {
                             if let Ok(_) =
                                 Self::transfer_icrc(_request.canister_id, _args.clone()).await
                             {
-                                transaction_results.push(AirdropTransactionDetails {
+                                let details = AirdropTransactionDetails {
                                     status: Status::Approved,
-                                    receiver: _args.to.owner,
-                                    amount: Amount::ICRC1(_args.amount),
+                                    receiver: _args.to.owner.clone(),
+                                    amount: Amount::ICRC1(_args.amount.clone()),
                                     canister_id: _request.canister_id,
-                                    token_standard: TokenStandard::ICRC1,
+                                    token_standard: TokenStandard::DIP20,
+                                };
+
+                                DATA.with(|_data| {
+                                    _data
+                                        .borrow_mut()
+                                        .airdrop_transactions
+                                        .entry(request_id)
+                                        .or_insert(HashMap::default())
+                                        .insert(_args.to.owner, details);
                                 });
                             } else {
-                                transaction_results.push(AirdropTransactionDetails {
+                                let details = AirdropTransactionDetails {
                                     status: Status::Rejected,
-                                    receiver: _args.to.owner,
-                                    amount: Amount::ICRC1(_args.amount),
+                                    receiver: _args.to.owner.clone(),
+                                    amount: Amount::ICRC1(_args.amount.clone()),
                                     canister_id: _request.canister_id,
-                                    token_standard: TokenStandard::ICRC1,
+                                    token_standard: TokenStandard::DIP20,
+                                };
+
+                                DATA.with(|_data| {
+                                    _data
+                                        .borrow_mut()
+                                        .airdrop_transactions
+                                        .entry(request_id)
+                                        .or_insert(HashMap::default())
+                                        .insert(_args.to.owner, details);
                                 });
                             }
                         }
                     }
                 }
-                return Ok(transaction_results);
             }
         }
     }
@@ -284,17 +320,17 @@ impl Store {
     fn reject_airdrop_request(request_id: u32, deadlock: bool) -> Result<String, String> {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
-            let whitelist_request = data
-                .whitelist_requests
+            let airdrop_request = data
+                .airdrop_requests
                 .get_mut(&request_id)
-                .ok_or("Whitelist request not found".to_string())?;
+                .ok_or("Airdrop request not found".to_string())?;
 
             if deadlock {
-                whitelist_request.data.status = Status::Deadlock;
-                return Ok("Whitelist request deadlocked".to_string());
+                airdrop_request.data.status = Status::Deadlock;
+                return Ok("Airdrop request deadlocked".to_string());
             } else {
-                whitelist_request.data.status = Status::Rejected;
-                return Ok("Whitelist request rejected".to_string());
+                airdrop_request.data.status = Status::Rejected;
+                return Ok("Airdrop request rejected".to_string());
             }
         })
     }
@@ -339,9 +375,9 @@ impl Store {
     pub fn expire_airdrop_request(request_id: &u32) {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
-            let whitelist_request = data.airdrop_requests.get_mut(request_id);
+            let airdrop_request = data.airdrop_requests.get_mut(request_id);
 
-            match whitelist_request {
+            match airdrop_request {
                 Some(_request) => {
                     if _request.data.status == Status::Pending {
                         _request.data.status = Status::Expired;

@@ -73,7 +73,7 @@ export const idlFactory = ({ IDL }) => {
   const VoteType = IDL.Variant({ 'Approve' : IDL.Null, 'Reject' : IDL.Null });
   return IDL.Service({
     '__get_candid_interface_tmp_hack' : IDL.Func([], [IDL.Text], ['query']),
-    'add_token_from_list' : IDL.Func(
+    'add_token_to_list' : IDL.Func(
         [IDL.Principal, TokenStandard],
         [Result],
         [],
@@ -83,6 +83,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_1],
         [],
       ),
+    'get_airdrop_error' : IDL.Func([IDL.Nat32], [Result_1], ['query']),
     'get_airdrop_requests' : IDL.Func(
         [IDL.Opt(Status)],
         [IDL.Vec(AirdropRequestData)],

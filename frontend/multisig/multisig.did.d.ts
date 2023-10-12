@@ -69,11 +69,12 @@ export type WhitelistRequestType = { 'Add' : Principal } |
   { 'Remove' : Principal };
 export interface _SERVICE {
   '__get_candid_interface_tmp_hack' : ActorMethod<[], string>,
-  'add_token_from_list' : ActorMethod<[Principal, TokenStandard], Result>,
+  'add_token_to_list' : ActorMethod<[Principal, TokenStandard], Result>,
   'airdrop_request' : ActorMethod<
     [Principal, Array<TransferRequestType>],
     Result_1
   >,
+  'get_airdrop_error' : ActorMethod<[number], Result_1>,
   'get_airdrop_requests' : ActorMethod<
     [[] | [Status]],
     Array<AirdropRequestData>

@@ -144,7 +144,7 @@ impl Store {
                         }
                     }
                 } else {
-                    return Err("No marjority reached".to_string());
+                    return Err("No majority reached".to_string());
                 }
             }
             Err(err) => return Err(err),
@@ -180,7 +180,7 @@ impl Store {
             } else if approval_percentage == 50.0 && rejection_percentage == 50.0 {
                 return Ok(VoteResponse::Deadlock);
             } else {
-                return Err("No marjority reached".to_string());
+                return Err("No majority reached".to_string());
             }
         })
     }
