@@ -14,8 +14,9 @@ name="generate"
 path = "lib.rs"
 
 [dependencies]
-candid = "0.8.2"
-ic-cdk = {version = "0.6.8", features = ["timers"]}
-ic-cdk-macros = "0.6.8"
+candid = "0.9.8"
+ic-cdk = "0.11.0"
 serde = "1.0"
-ic-ledger-types = "0.4.2"
+ic-ledger-types = "0.8.0"
+ic-cdk-timers = "0.4.0"
+serde_bytes = "0.11.12"

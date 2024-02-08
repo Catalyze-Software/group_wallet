@@ -3,12 +3,12 @@ use std::time::Duration;
 use candid::{Nat, Principal};
 use ic_cdk::api::time;
 use ic_cdk::id;
-use ic_cdk::timer::set_timer;
+use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
 use crate::rust_declarations::dip20_declaration::Dip20Service;
-use crate::rust_declarations::icrc_declaration::{Account, IcrcService, TransferArgs};
+use crate::rust_declarations::icrc_declaration::{Account, IcrcService, TransferArg};
 use crate::rust_declarations::types::{
     Dip20TransferArgs, SharedData, Status, TransactionRequestData, TransferRequestType,
     VoteResponse, VoteType, Votes,
@@ -48,10 +48,10 @@ impl Store {
 
         let has_balance = match &args {
             TransferRequestType::DIP20(args) => {
-                Self::balance_check_dip20(&Dip20Service(canister_id), args).await
+                Self::balance_check_dip20(canister_id, &args.amount).await
             }
             TransferRequestType::ICRC1(args) => {
-                Self::balance_check_icrc(&IcrcService(canister_id), args).await
+                Self::balance_check_icrc(canister_id, &args.amount).await
             }
         };
 
@@ -141,7 +141,7 @@ impl Store {
                         }
                     }
                 } else {
-                    return Err("No marjority reached".to_string());
+                    return Err("No majority reached".to_string());
                 }
             }
             Err(err) => return Err(err),
@@ -173,7 +173,7 @@ impl Store {
             } else if approval_percentage == 50.0 && rejection_percentage == 50.0 {
                 return Ok(VoteResponse::Deadlock);
             } else {
-                return Err("No marjority reached".to_string());
+                return Err("No majority reached".to_string());
             }
         })
     }
@@ -249,11 +249,14 @@ impl Store {
         })
     }
 
-    async fn transfer_dip20(canister_id: Principal, args: Dip20TransferArgs) -> Result<(), String> {
-        let actor = Dip20Service(canister_id);
-        match Self::balance_check_dip20(&actor, &args).await {
+    pub async fn transfer_dip20(
+        canister_id: Principal,
+        args: Dip20TransferArgs,
+    ) -> Result<(), String> {
+        match Self::balance_check_dip20(canister_id, &args.amount).await {
             Err(err) => Err(err),
             Ok(()) => {
+                let actor = Dip20Service(canister_id);
                 let result = actor.transfer(args.to, Nat::from(args.amount)).await;
                 match result {
                     Ok(_) => Ok(()),
@@ -263,17 +266,14 @@ impl Store {
         }
     }
 
-    async fn balance_check_dip20(
-        actor: &Dip20Service,
-        args: &Dip20TransferArgs,
-    ) -> Result<(), String> {
-        let balance = actor.balance_of(id()).await;
+    pub async fn balance_check_dip20(canister_id: Principal, amount: &u64) -> Result<(), String> {
+        let actor = Dip20Service(canister_id);
 
-        match balance {
+        match actor.balance_of(id()).await {
             Err((_, err)) => Err(err),
             Ok((balance,)) => {
-                if balance < args.amount {
-                    return Err("Insufficient balance".to_string());
+                if balance < Nat::from(amount.clone()) {
+                    return Err("Insufficient DIP20 balance".to_string());
                 }
 
                 Ok(())
@@ -281,29 +281,8 @@ impl Store {
         }
     }
 
-    async fn balance_check_icrc(actor: &IcrcService, args: &TransferArgs) -> Result<(), String> {
-        let balance = actor
-            .icrc1_balance_of(Account {
-                owner: id(),
-                subaccount: None,
-            })
-            .await;
-
-        match balance {
-            Err((_, err)) => Err(err),
-            Ok((balance,)) => {
-                if balance < args.amount {
-                    return Err("Insufficient balance".to_string());
-                }
-
-                Ok(())
-            }
-        }
-    }
-
-    async fn transfer_icrc(canister_id: Principal, args: TransferArgs) -> Result<(), String> {
+    pub async fn balance_check_icrc(canister_id: Principal, amount: &Nat) -> Result<(), String> {
         let actor = IcrcService(canister_id);
-
         let balance = actor
             .icrc1_balance_of(Account {
                 owner: id(),
@@ -314,10 +293,20 @@ impl Store {
         match balance {
             Err((_, err)) => Err(err),
             Ok((balance,)) => {
-                if balance < args.amount {
-                    return Err("Insufficient balance".to_string());
+                if &balance < amount {
+                    return Err("Insufficient ICRC balance".to_string());
                 }
 
+                Ok(())
+            }
+        }
+    }
+
+    pub async fn transfer_icrc(canister_id: Principal, args: TransferArg) -> Result<(), String> {
+        match Self::balance_check_icrc(canister_id, &args.amount).await {
+            Err(err) => Err(err),
+            Ok(_) => {
+                let actor = IcrcService(canister_id);
                 let result = actor.icrc1_transfer(args).await;
 
                 match result {

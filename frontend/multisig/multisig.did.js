@@ -1,18 +1,11 @@
 export const idlFactory = ({ IDL }) => {
   const TokenStandard = IDL.Variant({ 'ICRC1' : IDL.Null, 'DIP20' : IDL.Null });
   const Result = IDL.Variant({ 'Ok' : IDL.Null, 'Err' : IDL.Text });
-  const Status = IDL.Variant({
-    'Deadlock' : IDL.Null,
-    'Approved' : IDL.Null,
-    'Rejected' : IDL.Null,
-    'Expired' : IDL.Null,
-    'Pending' : IDL.Null,
-  });
   const Account = IDL.Record({
     'owner' : IDL.Principal,
     'subaccount' : IDL.Opt(IDL.Vec(IDL.Nat8)),
   });
-  const TransferArgs = IDL.Record({
+  const TransferArg = IDL.Record({
     'to' : Account,
     'fee' : IDL.Opt(IDL.Nat),
     'memo' : IDL.Opt(IDL.Vec(IDL.Nat8)),
@@ -25,8 +18,16 @@ export const idlFactory = ({ IDL }) => {
     'amount' : IDL.Nat64,
   });
   const TransferRequestType = IDL.Variant({
-    'ICRC1' : TransferArgs,
+    'ICRC1' : TransferArg,
     'DIP20' : Dip20TransferArgs,
+  });
+  const Result_1 = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
+  const Status = IDL.Variant({
+    'Deadlock' : IDL.Null,
+    'Approved' : IDL.Null,
+    'Rejected' : IDL.Null,
+    'Expired' : IDL.Null,
+    'Pending' : IDL.Null,
   });
   const Votes = IDL.Record({
     'rejections' : IDL.Vec(IDL.Principal),
@@ -38,6 +39,23 @@ export const idlFactory = ({ IDL }) => {
     'votes' : Votes,
     'created_at' : IDL.Nat64,
     'requested_by' : IDL.Principal,
+  });
+  const AirdropRequestData = IDL.Record({
+    'data' : SharedData,
+    'canister_id' : IDL.Principal,
+    'tranfer_args' : IDL.Vec(TransferRequestType),
+  });
+  const Amount = IDL.Variant({ 'ICRC1' : IDL.Nat, 'DIP20' : IDL.Nat64 });
+  const AirdropTransactionDetails = IDL.Record({
+    'status' : Status,
+    'canister_id' : IDL.Principal,
+    'token_standard' : TokenStandard,
+    'amount' : Amount,
+    'receiver' : IDL.Principal,
+  });
+  const Result_2 = IDL.Variant({
+    'Ok' : IDL.Vec(AirdropTransactionDetails),
+    'Err' : IDL.Text,
   });
   const TransactionRequestData = IDL.Record({
     'args' : TransferRequestType,
@@ -52,15 +70,26 @@ export const idlFactory = ({ IDL }) => {
     'request_type' : WhitelistRequestType,
     'data' : SharedData,
   });
-  const Result_1 = IDL.Variant({ 'Ok' : IDL.Text, 'Err' : IDL.Text });
   const VoteType = IDL.Variant({ 'Approve' : IDL.Null, 'Reject' : IDL.Null });
   return IDL.Service({
     '__get_candid_interface_tmp_hack' : IDL.Func([], [IDL.Text], ['query']),
-    'add_token_from_list' : IDL.Func(
+    'add_token_to_list' : IDL.Func(
         [IDL.Principal, TokenStandard],
         [Result],
         [],
       ),
+    'airdrop_request' : IDL.Func(
+        [IDL.Principal, IDL.Vec(TransferRequestType)],
+        [Result_1],
+        [],
+      ),
+    'get_airdrop_error' : IDL.Func([IDL.Nat32], [Result_1], ['query']),
+    'get_airdrop_requests' : IDL.Func(
+        [IDL.Opt(Status)],
+        [IDL.Vec(AirdropRequestData)],
+        ['query'],
+      ),
+    'get_airdrop_transactions' : IDL.Func([IDL.Nat32], [Result_2], ['query']),
     'get_time_out' : IDL.Func([], [IDL.Nat64], ['query']),
     'get_token_list' : IDL.Func(
         [],
@@ -84,6 +113,7 @@ export const idlFactory = ({ IDL }) => {
         [Result_1],
         [],
       ),
+    'vote_on_airdrop_request' : IDL.Func([IDL.Nat32, VoteType], [Result_1], []),
     'vote_on_transaction_request' : IDL.Func(
         [IDL.Nat32, VoteType],
         [Result_1],

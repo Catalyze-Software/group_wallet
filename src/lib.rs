@@ -1,6 +1,7 @@
 pub mod methods;
 
 pub mod logic {
+    pub mod airdrop_logic;
     pub mod store;
     pub mod transaction_logic;
     pub mod whitelist_logic;

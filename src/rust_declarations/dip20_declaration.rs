@@ -1,8 +1,9 @@
 // This is an experimental feature to generate Rust binding from Candid.
 // You may want to manually adjust some of the types.
 
+use candid::CandidType;
 use ic_cdk::api::call::CallResult;
-use ic_cdk::export::candid::{self, CandidType, Deserialize};
+use serde::Deserialize;
 
 #[derive(CandidType, Deserialize)]
 pub enum TxError {

@@ -5,7 +5,8 @@ use candid::{CandidType, Principal};
 use serde::Deserialize;
 
 use crate::rust_declarations::types::{
-    TokenStandard, TransactionRequestData, Votes, WhitelistRequestData,
+    AirdropRequestData, AirdropTransactionDetails, TokenStandard, TransactionRequestData, Votes,
+    WhitelistRequestData,
 };
 
 pub static DAY_IN_NANOS: u64 = Duration::from_secs(1 * 24 * 60 * 60).as_nanos() as u64;
@@ -23,6 +24,12 @@ pub struct Store {
     pub transaction_request_id: u32,
     pub transaction_requests: HashMap<u32, TransactionRequestData>,
     pub transaction_request_expiry: u64,
+
+    pub airdrop_transactions: HashMap<u32, HashMap<Principal, AirdropTransactionDetails>>,
+    pub airdrop_error: HashMap<u32, String>,
+    pub airdrop_request_id: u32,
+    pub airdrop_requests: HashMap<u32, AirdropRequestData>,
+    pub airdrop_request_expiry: u64,
 }
 
 impl Default for Store {
@@ -38,6 +45,12 @@ impl Default for Store {
             transaction_request_id: 0,
             transaction_requests: Default::default(),
             transaction_request_expiry: DAY_IN_NANOS,
+
+            airdrop_transactions: Default::default(),
+            airdrop_error: Default::default(),
+            airdrop_request_id: 0,
+            airdrop_requests: Default::default(),
+            airdrop_request_expiry: DAY_IN_NANOS,
         }
     }
 }
@@ -53,6 +66,22 @@ impl Store {
             data.owner = owner.clone();
             data.whitelist.push(owner);
         });
+    }
+
+    pub fn get_airdrop_error(caller: Principal, request_id: u32) -> Result<String, String> {
+        DATA.with(|data| {
+            let data = data.borrow();
+
+            if !data.whitelist.contains(&caller) {
+                return Err("Caller is not whitelisted".to_string());
+            };
+
+            let error = data.airdrop_error.get(&request_id).clone();
+            match error {
+                Some(error) => Ok(error.clone()),
+                None => Err("No error found".to_string()),
+            }
+        })
     }
 
     pub fn get_token_list() -> Vec<(Principal, TokenStandard)> {

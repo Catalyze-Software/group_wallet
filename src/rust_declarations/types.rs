@@ -1,7 +1,7 @@
-use candid::{CandidType, Principal};
+use candid::{CandidType, Nat, Principal};
 use serde::Deserialize;
 
-use super::icrc_declaration::TransferArgs;
+use super::icrc_declaration::TransferArg;
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct TransactionRequestData {
@@ -19,7 +19,7 @@ pub struct Dip20TransferArgs {
 #[derive(CandidType, Deserialize, Clone)]
 pub enum TransferRequestType {
     DIP20(Dip20TransferArgs),
-    ICRC1(TransferArgs),
+    ICRC1(TransferArg),
 }
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
@@ -31,6 +31,13 @@ pub enum TokenStandard {
 #[derive(CandidType, Deserialize, Clone)]
 pub struct WhitelistRequestData {
     pub request_type: WhitelistRequestType,
+    pub data: SharedData,
+}
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct AirdropRequestData {
+    pub tranfer_args: Vec<TransferRequestType>,
+    pub canister_id: Principal,
     pub data: SharedData,
 }
 
@@ -75,4 +82,19 @@ pub enum Status {
     Rejected,
     Expired,
     Deadlock,
+}
+
+#[derive(CandidType, Deserialize, PartialEq, Eq, Clone)]
+pub enum Amount {
+    DIP20(u64),
+    ICRC1(Nat),
+}
+
+#[derive(CandidType, Deserialize, Clone)]
+pub struct AirdropTransactionDetails {
+    pub status: Status,
+    pub receiver: Principal,
+    pub amount: Amount,
+    pub canister_id: Principal,
+    pub token_standard: TokenStandard,
 }
