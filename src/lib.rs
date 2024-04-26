@@ -6,7 +6,7 @@ pub mod logic {
     pub mod transaction_logic;
     pub mod whitelist_logic;
 }
-pub mod rust_declarations {
+pub mod ledger_declarations {
     pub mod dip20_declaration;
     pub mod icrc_declaration;
     pub mod types;

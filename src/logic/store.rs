@@ -4,7 +4,7 @@ use candid::{CandidType, Principal};
 
 use serde::Deserialize;
 
-use crate::rust_declarations::types::{
+use crate::ledger_declarations::types::{
     AirdropRequestData, AirdropTransactionDetails, TokenStandard, TransactionRequestData, Votes,
     WhitelistRequestData,
 };

@@ -7,9 +7,9 @@ use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
-use crate::rust_declarations::dip20_declaration::Dip20Service;
-use crate::rust_declarations::icrc_declaration::{Account, IcrcService, TransferArg};
-use crate::rust_declarations::types::{
+use crate::ledger_declarations::dip20_declaration::Dip20Service;
+use crate::ledger_declarations::icrc_declaration::{Account, IcrcService, TransferArg};
+use crate::ledger_declarations::types::{
     Dip20TransferArgs, SharedData, Status, TransactionRequestData, TransferRequestType,
     VoteResponse, VoteType, Votes,
 };
