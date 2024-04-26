@@ -7,7 +7,7 @@ use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
-use crate::rust_declarations::types::{
+use crate::ledger_declarations::types::{
     AirdropRequestData, AirdropTransactionDetails, Amount, SharedData, Status, TokenStandard,
     TransferRequestType, VoteResponse, VoteType, Votes,
 };
@@ -340,7 +340,7 @@ impl Store {
         transfer_args: Vec<TransferRequestType>,
     ) -> Result<(), String> {
         let mut dip20total = 0;
-        let mut icrc1total: Nat = Nat::from(0);
+        let mut icrc1total: Nat = Nat::from(0u32);
 
         for args in transfer_args {
             match args {
@@ -361,7 +361,7 @@ impl Store {
             }
         }
 
-        if icrc1total > Nat::from(0) {
+        if icrc1total > Nat::from(0u32) {
             let balance = Store::balance_check_icrc(canister_id, &icrc1total).await;
             match balance {
                 Ok(_) => {}

@@ -6,7 +6,7 @@ use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
-use crate::rust_declarations::types::{
+use crate::ledger_declarations::types::{
     SharedData, Status, VoteResponse, VoteType, Votes, WhitelistRequestData, WhitelistRequestType,
 };
 

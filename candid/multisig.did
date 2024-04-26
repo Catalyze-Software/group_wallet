@@ -1,4 +1,4 @@
-type Account = record { owner : principal; subaccount : opt vec nat8 };
+type Account = record { owner : principal; subaccount : opt blob };
 type AirdropRequestData = record {
   data : SharedData;
   canister_id : principal;
@@ -33,8 +33,8 @@ type TransactionRequestData = record {
 type TransferArg = record {
   to : Account;
   fee : opt nat;
-  memo : opt vec nat8;
-  from_subaccount : opt vec nat8;
+  memo : opt blob;
+  from_subaccount : opt blob;
   created_at_time : opt nat64;
   amount : nat;
 };

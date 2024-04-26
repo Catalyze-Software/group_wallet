@@ -2,12 +2,12 @@ use candid::Principal;
 use ic_cdk::{caller, init, post_upgrade, pre_upgrade, query, storage, update};
 
 use crate::{
-    logic::store::{Store, DATA, DAY_IN_NANOS},
-    rust_declarations::types::{
+    ledger_declarations::types::{
         AirdropRequestData, AirdropTransactionDetails, Status, TokenStandard,
         TransactionRequestData, TransferRequestType, VoteType, WhitelistRequestData,
         WhitelistRequestType,
     },
+    logic::store::{Store, DATA, DAY_IN_NANOS},
 };
 
 #[init]
