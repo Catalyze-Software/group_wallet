@@ -10,6 +10,7 @@ use crate::{
     logic::store::{Store, DATA, DAY_IN_NANOS},
 };
 
+// minimum 2 principal on init
 #[init]
 pub fn init(owner: Principal) {
     Store::init(owner);
@@ -90,7 +91,7 @@ async fn vote_on_transaction_request(
     request_id: u32,
     vote_type: VoteType,
 ) -> Result<String, String> {
-    Store::vote_on_transaction_request(caller(), request_id, vote_type).await
+    Store::vote_on_transaction_request(caller(), request_id, vote_type)
 }
 
 /////////////

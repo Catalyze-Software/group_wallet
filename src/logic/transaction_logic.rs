@@ -75,12 +75,12 @@ impl Store {
                     Self::expire_transaction_requests(&id);
                 });
 
-                Self::vote_on_transaction_request(caller, id, VoteType::Approve).await
+                Self::vote_on_transaction_request(caller, id, VoteType::Approve)
             }
         }
     }
 
-    pub async fn vote_on_transaction_request(
+    pub fn vote_on_transaction_request(
         caller: Principal,
         request_id: u32,
         vote: VoteType,
