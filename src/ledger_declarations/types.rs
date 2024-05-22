@@ -1,4 +1,5 @@
 use candid::{CandidType, Nat, Principal};
+use ic_cdk::{api::time, caller};
 use serde::Deserialize;
 
 use super::icrc_declaration::TransferArg;
@@ -60,13 +61,59 @@ pub enum WhitelistRequestType {
     Remove(Principal),
 }
 
+impl WhitelistRequestType {
+    pub fn principal(&self) -> &Principal {
+        match self {
+            WhitelistRequestType::Add(principal) => principal,
+            WhitelistRequestType::Remove(principal) => principal,
+        }
+    }
+}
+
 #[derive(CandidType, Deserialize, Clone)]
 pub struct SharedData {
     pub id: u32,
     pub status: Status,
     pub votes: Votes,
     pub requested_by: Principal,
+    pub send_at: Option<u64>,
     pub created_at: u64,
+}
+
+impl SharedData {
+    pub fn new(id: u32) -> Self {
+        Self {
+            id,
+            status: Status::Pending,
+            votes: Votes {
+                approvals: Vec::new(),
+                rejections: Vec::new(),
+            },
+            requested_by: caller(),
+            send_at: None,
+            created_at: time(),
+        }
+    }
+
+    pub fn add_approve_vote(&mut self, caller: Principal) {
+        if !self.votes.approvals.contains(&caller) && !self.votes.rejections.contains(&caller) {
+            self.votes.approvals.push(caller);
+        }
+    }
+
+    pub fn add_reject_vote(&mut self, caller: Principal) {
+        if !self.votes.approvals.contains(&caller) && !self.votes.rejections.contains(&caller) {
+            self.votes.rejections.push(caller);
+        }
+    }
+
+    pub fn update_status(&mut self, status: Status) {
+        self.status = status;
+    }
+
+    pub fn set_send_at(&mut self, send_at: u64) {
+        self.send_at = Some(send_at);
+    }
 }
 
 #[derive(CandidType, Deserialize, Clone)]

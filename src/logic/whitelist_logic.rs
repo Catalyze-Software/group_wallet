@@ -1,40 +1,38 @@
 use std::time::Duration;
 
 use candid::Principal;
-use ic_cdk::api::time;
 use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
 use crate::ledger_declarations::types::{
-    SharedData, Status, VoteResponse, VoteType, Votes, WhitelistRequestData, WhitelistRequestType,
+    SharedData, Status, VoteResponse, VoteType, WhitelistRequestData, WhitelistRequestType,
 };
 
 use super::store::DAY_IN_NANOS;
 
 impl Store {
     pub fn get_whitelist() -> Vec<Principal> {
-        DATA.with(|data| {
-            let data = data.borrow();
-            data.whitelist.clone()
-        })
+        DATA.with(|data| data.borrow().whitelist.clone())
     }
 
     pub fn get_whitelist_requests(status: Option<Status>) -> Vec<WhitelistRequestData> {
         DATA.with(|data| {
             let data = data.borrow();
+
             let mut whitelist_requests = data
                 .whitelist_requests
                 .values()
                 .filter(|request| {
-                    if let Some(status) = status.clone() {
-                        request.data.status == status
+                    if let Some(status) = &status {
+                        &request.data.status == status
                     } else {
                         true
                     }
                 })
                 .cloned()
                 .collect::<Vec<WhitelistRequestData>>();
+
             whitelist_requests.sort_by(|a, b| a.data.created_at.cmp(&b.data.created_at));
             whitelist_requests
         })
@@ -44,22 +42,18 @@ impl Store {
         caller: Principal,
         request_type: WhitelistRequestType,
     ) -> Result<String, String> {
-        if let Err(err) = Self::is_whitelisted(&caller) {
-            return Err(err);
-        }
+        Self::is_whitelisted(&caller)?;
+        Self::check_duplicate_whitelist_request(&request_type)?;
 
-        if let Err(err) = Self::check_duplicate_whitelist_request(&request_type) {
-            return Err(err);
-        }
-
-        if let WhitelistRequestType::Add(principal) = &request_type {
-            if let Ok(_) = Self::is_whitelisted(principal) {
+        use WhitelistRequestType::*;
+        if let Add(principal) = &request_type {
+            if Self::is_whitelisted(principal).is_ok() {
                 return Err("Principal already whitelisted".to_string());
             }
         }
 
-        if let WhitelistRequestType::Remove(principal) = &request_type {
-            if let Err(_) = Self::is_whitelisted(principal) {
+        if let Remove(principal) = &request_type {
+            if Self::is_whitelisted(principal).is_err() {
                 return Err("Principal not whitelisted".to_string());
             }
         }
@@ -70,20 +64,11 @@ impl Store {
 
             let whitelist_data = WhitelistRequestData {
                 request_type,
-                data: SharedData {
-                    id: whitelist_request_id,
-                    status: Status::Pending,
-                    votes: Votes {
-                        approvals: vec![],
-                        rejections: vec![],
-                    },
-                    requested_by: caller,
-                    created_at: time(),
-                },
+                data: SharedData::new(whitelist_request_id),
             };
             data.whitelist_request_id += 1;
             data.whitelist_requests
-                .insert(whitelist_request_id.clone(), whitelist_data.clone());
+                .insert(whitelist_request_id, whitelist_data.clone());
 
             whitelist_request_id
         });
@@ -100,12 +85,10 @@ impl Store {
         request_id: u32,
         vote: VoteType,
     ) -> Result<String, String> {
-        let result = DATA.with(|data| {
-            let mut data = data.borrow_mut();
+        Self::is_whitelisted(&caller)?;
 
-            if !data.whitelist.contains(&caller) {
-                return Err("Caller is not whitelisted".to_string());
-            }
+        DATA.with(|data| {
+            let mut data = data.borrow_mut();
 
             let whitelist_request = data
                 .whitelist_requests
@@ -116,38 +99,26 @@ impl Store {
                 return Err("Whitelist request is not pending".to_string());
             }
 
-            if let Err(err) = Self::check_duplicate_vote(&caller, &whitelist_request.data.votes) {
-                return Err(err);
-            }
+            Self::check_duplicate_vote(&caller, &whitelist_request.data.votes)?;
 
             if vote == VoteType::Approve {
                 whitelist_request.data.votes.approvals.push(caller);
-                return Ok(VoteType::Approve);
+                Ok(VoteType::Approve)
             } else {
                 whitelist_request.data.votes.rejections.push(caller);
-                return Ok(VoteType::Reject);
+                Ok(VoteType::Reject)
             }
-        });
+        })?;
 
-        match result {
-            Ok(_) => {
-                if let Ok(vote_type) = Self::get_whitelist_request_majority(request_id) {
-                    match vote_type {
-                        VoteResponse::Approve => {
-                            return Self::approve_whitelist_request(request_id);
-                        }
-                        VoteResponse::Reject => {
-                            return Self::reject_whitelist_request(request_id, false);
-                        }
-                        VoteResponse::Deadlock => {
-                            return Self::reject_whitelist_request(request_id, true);
-                        }
-                    }
-                } else {
-                    return Err("No majority reached".to_string());
-                }
+        if let Ok(vote_type) = Self::get_whitelist_request_majority(request_id) {
+            use VoteResponse::*;
+            match vote_type {
+                Approve => Self::approve_whitelist_request(request_id),
+                Reject => Self::reject_whitelist_request(request_id, false),
+                Deadlock => Self::reject_whitelist_request(request_id, true),
             }
-            Err(err) => return Err(err),
+        } else {
+            Err("No majority reached".to_string())
         }
     }
 
@@ -163,7 +134,7 @@ impl Store {
                 .ok_or("Whitelist request not found".to_string())?;
 
             if let WhitelistRequestType::Remove(principal) = whitelist_request.request_type {
-                whitelist = whitelist.into_iter().filter(|p| p != &principal).collect();
+                whitelist.retain(|p| p != &principal);
             }
 
             let whitelist_count = whitelist.len() as f32;
@@ -173,14 +144,15 @@ impl Store {
             let approval_percentage = (approval_count / whitelist_count) * 100.0;
             let rejection_percentage = (rejection_count / whitelist_count) * 100.0;
 
+            use VoteResponse::*;
             if approval_percentage > 50.0 {
-                return Ok(VoteResponse::Approve);
+                Ok(Approve)
             } else if rejection_percentage > 50.0 {
-                return Ok(VoteResponse::Reject);
+                Ok(Reject)
             } else if approval_percentage == 50.0 && rejection_percentage == 50.0 {
-                return Ok(VoteResponse::Deadlock);
+                Ok(Deadlock)
             } else {
-                return Err("No majority reached".to_string());
+                Err("No majority reached".to_string())
             }
         })
     }
@@ -194,36 +166,30 @@ impl Store {
                 Some(_request) => {
                     let request_type = _request.request_type.clone();
                     _request.data.status = Status::Approved;
-                    return Ok(request_type);
+                    Ok(request_type)
                 }
-                None => {
-                    return Err("Whitelist request not found".to_string());
-                }
+                None => Err("Whitelist request not found".to_string()),
             }
         });
 
         DATA.with(|data| {
             let mut data = data.borrow_mut();
+            use WhitelistRequestType::*;
             match request_type {
-                Ok(WhitelistRequestType::Add(principal)) => {
+                Ok(Add(principal)) => {
                     data.whitelist.push(principal);
-                    return Ok("Whitelist request approved".to_string());
+                    Ok("Whitelist request approved".to_string())
                 }
-                Ok(WhitelistRequestType::Remove(principal)) => {
-                    let index = data.whitelist.iter().position(|x| *x == principal);
-                    match index {
+                Ok(Remove(principal)) => {
+                    match data.whitelist.iter().position(|x| *x == principal) {
                         Some(i) => {
                             data.whitelist.remove(i);
-                            return Ok("Whitelist request approved".to_string());
+                            Ok("Whitelist request approved".to_string())
                         }
-                        None => {
-                            return Err("Principal not found in whitelist".to_string());
-                        }
+                        None => Err("Principal not found in whitelist".to_string()),
                     }
                 }
-                Err(err) => {
-                    return Err(err);
-                }
+                Err(err) => Err(err),
             }
         })
     }
@@ -238,10 +204,10 @@ impl Store {
 
             if deadlock {
                 whitelist_request.data.status = Status::Deadlock;
-                return Ok("Whitelist request deadlocked".to_string());
+                Ok("Whitelist request deadlocked".to_string())
             } else {
                 whitelist_request.data.status = Status::Rejected;
-                return Ok("Whitelist request rejected".to_string());
+                Ok("Whitelist request rejected".to_string())
             }
         })
     }
@@ -251,38 +217,37 @@ impl Store {
             let data = &data.borrow();
             let whitelist_requests = &data.whitelist_requests;
 
-            let has_pending_add_request = whitelist_requests.iter().any(|(_, _request)| {
-                &_request.request_type == request && _request.data.status == Status::Pending
-            });
-
-            if has_pending_add_request {
-                return Err("Already a pending add request".to_string());
+            match request {
+                WhitelistRequestType::Add(principal) => {
+                    if whitelist_requests.iter().any(|(_, _request)| {
+                        _request.request_type.principal() == principal
+                            && _request.data.status == Status::Pending
+                    }) {
+                        return Err("Already a pending add request".to_string());
+                    }
+                }
+                WhitelistRequestType::Remove(principal) => {
+                    if whitelist_requests.iter().any(|(_, _request)| {
+                        _request.request_type.principal() == principal
+                            && _request.data.status == Status::Pending
+                    }) {
+                        return Err("Already a pending remove request".to_string());
+                    }
+                }
             }
 
-            let has_pending_remove_request = whitelist_requests.iter().any(|(_, _request)| {
-                &_request.request_type == request && _request.data.status == Status::Pending
-            });
-
-            if has_pending_remove_request {
-                return Err("Already a pending remove request".to_string());
-            }
-
-            return Ok(());
+            Ok(())
         })
     }
 
     pub fn expire_whitelist_request(request_id: &u32) {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
-            let whitelist_request = data.whitelist_requests.get_mut(request_id);
 
-            match whitelist_request {
-                Some(_request) => {
-                    if _request.data.status == Status::Pending {
-                        _request.data.status = Status::Expired;
-                    }
+            if let Some(_request) = data.whitelist_requests.get_mut(request_id) {
+                if _request.data.status == Status::Pending {
+                    _request.data.status = Status::Expired;
                 }
-                None => {}
             }
         })
     }

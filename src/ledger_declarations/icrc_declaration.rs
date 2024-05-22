@@ -33,7 +33,7 @@ pub enum Value {
 
 #[derive(CandidType, Deserialize)]
 pub struct ArchivedRangeCallbackRet0 {
-    blocks: Vec<Box<Value>>,
+    blocks: Vec<Value>,
 }
 
 candid::define_function!(pub ArchivedRangeCallback : (GetBlocksRequest) -> (
@@ -50,7 +50,7 @@ pub struct ArchivedRange {
 pub struct GetBlocksResponse {
     certificate: Option<serde_bytes::ByteBuf>,
     first_index: candid::Nat,
-    blocks: Vec<Box<Value>>,
+    blocks: Vec<Value>,
     chain_length: u64,
     archived_blocks: Vec<ArchivedRange>,
 }

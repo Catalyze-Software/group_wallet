@@ -2,14 +2,13 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use candid::{Nat, Principal};
-use ic_cdk::api::time;
 use ic_cdk_timers::set_timer;
 
 use crate::logic::store::{Store, DATA};
 
 use crate::ledger_declarations::types::{
     AirdropRequestData, AirdropTransactionDetails, Amount, SharedData, Status, TokenStandard,
-    TransferRequestType, VoteResponse, VoteType, Votes,
+    TransferRequestType, VoteResponse, VoteType,
 };
 
 use super::store::DAY_IN_NANOS;
@@ -17,8 +16,8 @@ use super::store::DAY_IN_NANOS;
 impl Store {
     pub fn get_airdrops() -> Vec<AirdropRequestData> {
         DATA.with(|data| {
-            let data = data.borrow();
-            data.airdrop_requests
+            data.borrow()
+                .airdrop_requests
                 .values()
                 .cloned()
                 .collect::<Vec<AirdropRequestData>>()
@@ -27,8 +26,8 @@ impl Store {
 
     pub fn get_airdrop_requests(status: Option<Status>) -> Vec<AirdropRequestData> {
         DATA.with(|data| {
-            let data = data.borrow();
             let mut airdrop_requests = data
+                .borrow()
                 .airdrop_requests
                 .values()
                 .filter(|request| {
@@ -40,6 +39,7 @@ impl Store {
                 })
                 .cloned()
                 .collect::<Vec<AirdropRequestData>>();
+
             airdrop_requests.sort_by(|a, b| a.data.created_at.cmp(&b.data.created_at));
             airdrop_requests
         })
@@ -50,13 +50,8 @@ impl Store {
         transfer_args: Vec<TransferRequestType>,
         canister_id: Principal,
     ) -> Result<String, String> {
-        if let Err(err) = Self::is_whitelisted(&caller) {
-            return Err(err);
-        }
-
-        if let Err(err) = Self::check_balance(canister_id, transfer_args.clone()).await {
-            return Err(err);
-        }
+        Self::is_whitelisted(&caller)?;
+        Self::check_balance(canister_id, transfer_args.clone()).await?;
 
         let id = DATA.with(|data| {
             let mut data = data.borrow_mut();
@@ -64,21 +59,12 @@ impl Store {
 
             let airdrop_data = AirdropRequestData {
                 tranfer_args: transfer_args.clone(),
-                data: SharedData {
-                    id: airdrop_request_id,
-                    status: Status::Pending,
-                    votes: Votes {
-                        approvals: vec![],
-                        rejections: vec![],
-                    },
-                    requested_by: caller,
-                    created_at: time(),
-                },
+                data: SharedData::new(airdrop_request_id),
                 canister_id,
             };
             data.airdrop_request_id += 1;
             data.airdrop_requests
-                .insert(airdrop_request_id.clone(), airdrop_data.clone());
+                .insert(airdrop_request_id, airdrop_data.clone());
 
             airdrop_request_id
         });
@@ -128,7 +114,7 @@ impl Store {
         request_id: u32,
         vote: VoteType,
     ) -> Result<String, String> {
-        let result = DATA.with(|data| {
+        DATA.with(|data| {
             let mut data = data.borrow_mut();
 
             if !data.whitelist.contains(&caller) {
@@ -144,39 +130,27 @@ impl Store {
                 return Err("Airdrop request is not pending".to_string());
             }
 
-            if let Err(err) = Self::check_duplicate_vote(&caller, &airdrop_request.data.votes) {
-                return Err(err);
-            }
+            Self::check_duplicate_vote(&caller, &airdrop_request.data.votes)?;
 
             if vote == VoteType::Approve {
-                airdrop_request.data.votes.approvals.push(caller);
-                return Ok(VoteType::Approve);
+                airdrop_request.data.add_approve_vote(caller);
+                Ok(VoteType::Approve)
             } else {
-                airdrop_request.data.votes.rejections.push(caller);
-                return Ok(VoteType::Reject);
+                airdrop_request.data.add_reject_vote(caller);
+                Ok(VoteType::Reject)
             }
-        });
+        })?;
 
-        match result {
-            Ok(_) => {
-                if let Ok(vote_type) = Self::get_airdrop_request_majority(request_id) {
-                    match vote_type {
-                        VoteResponse::Approve => {
-                            ic_cdk::spawn(Self::approve_airdrop_request(request_id));
-                            Ok("Airdrop request approved".to_string())
-                        }
-                        VoteResponse::Reject => {
-                            return Self::reject_airdrop_request(request_id, false);
-                        }
-                        VoteResponse::Deadlock => {
-                            return Self::reject_airdrop_request(request_id, true);
-                        }
-                    }
-                } else {
-                    return Err("No majority reached".to_string());
-                }
+        let majority = Self::get_airdrop_request_majority(request_id)?;
+
+        use VoteResponse::*;
+        match majority {
+            Approve => {
+                ic_cdk::spawn(Self::approve_airdrop_request(request_id));
+                Ok("Airdrop request approved".to_string())
             }
-            Err(err) => return Err(err),
+            Reject => Self::reject_airdrop_request(request_id, false),
+            Deadlock => Self::reject_airdrop_request(request_id, true),
         }
     }
 
@@ -199,30 +173,27 @@ impl Store {
             let rejection_percentage = (rejection_count / whitelist_count) * 100.0;
 
             if approval_percentage > 50.0 {
-                return Ok(VoteResponse::Approve);
+                Ok(VoteResponse::Approve)
             } else if rejection_percentage > 50.0 {
-                return Ok(VoteResponse::Reject);
+                Ok(VoteResponse::Reject)
             } else if approval_percentage == 50.0 && rejection_percentage == 50.0 {
-                return Ok(VoteResponse::Deadlock);
+                Ok(VoteResponse::Deadlock)
             } else {
-                return Err("No majority reached".to_string());
+                Err("No majority reached".to_string())
             }
         })
     }
 
-    async fn approve_airdrop_request(request_id: u32) -> () {
+    async fn approve_airdrop_request(request_id: u32) {
         let request = DATA.with(|data| {
             let mut data = data.borrow_mut();
-            let airdrop_request = data.airdrop_requests.get_mut(&request_id);
 
-            match airdrop_request {
+            match data.airdrop_requests.get_mut(&request_id) {
                 Some(_request) => {
                     _request.data.status = Status::Approved;
-                    return Ok(_request.clone());
+                    Ok(_request.clone())
                 }
-                None => {
-                    return Err("Airdrop request not found".to_string());
-                }
+                None => Err("Airdrop request not found".to_string()),
             }
         });
 
@@ -234,8 +205,8 @@ impl Store {
                 for args in _request.tranfer_args {
                     match args {
                         TransferRequestType::DIP20(_args) => {
-                            if let Ok(_) =
-                                Store::transfer_dip20(_request.canister_id, _args.clone()).await
+                            if (Store::transfer_dip20(_request.canister_id, _args.clone()).await)
+                                .is_ok()
                             {
                                 let details = AirdropTransactionDetails {
                                     status: Status::Approved,
@@ -250,7 +221,7 @@ impl Store {
                                         .borrow_mut()
                                         .airdrop_transactions
                                         .entry(request_id)
-                                        .or_insert(HashMap::default())
+                                        .or_default()
                                         .insert(_args.to, details);
                                 });
                             } else {
@@ -267,18 +238,18 @@ impl Store {
                                         .borrow_mut()
                                         .airdrop_transactions
                                         .entry(request_id)
-                                        .or_insert(HashMap::default())
+                                        .or_default()
                                         .insert(_args.to, details);
                                 });
                             }
                         }
                         TransferRequestType::ICRC1(_args) => {
-                            if let Ok(_) =
-                                Self::transfer_icrc(_request.canister_id, _args.clone()).await
+                            if (Self::transfer_icrc(_request.canister_id, _args.clone()).await)
+                                .is_ok()
                             {
                                 let details = AirdropTransactionDetails {
                                     status: Status::Approved,
-                                    receiver: _args.to.owner.clone(),
+                                    receiver: _args.to.owner,
                                     amount: Amount::ICRC1(_args.amount.clone()),
                                     canister_id: _request.canister_id,
                                     token_standard: TokenStandard::DIP20,
@@ -289,13 +260,13 @@ impl Store {
                                         .borrow_mut()
                                         .airdrop_transactions
                                         .entry(request_id)
-                                        .or_insert(HashMap::default())
+                                        .or_default()
                                         .insert(_args.to.owner, details);
                                 });
                             } else {
                                 let details = AirdropTransactionDetails {
                                     status: Status::Rejected,
-                                    receiver: _args.to.owner.clone(),
+                                    receiver: _args.to.owner,
                                     amount: Amount::ICRC1(_args.amount.clone()),
                                     canister_id: _request.canister_id,
                                     token_standard: TokenStandard::DIP20,
@@ -306,7 +277,7 @@ impl Store {
                                         .borrow_mut()
                                         .airdrop_transactions
                                         .entry(request_id)
-                                        .or_insert(HashMap::default())
+                                        .or_default()
                                         .insert(_args.to.owner, details);
                                 });
                             }
@@ -327,10 +298,10 @@ impl Store {
 
             if deadlock {
                 airdrop_request.data.status = Status::Deadlock;
-                return Ok("Airdrop request deadlocked".to_string());
+                Ok("Airdrop request deadlocked".to_string())
             } else {
                 airdrop_request.data.status = Status::Rejected;
-                return Ok("Airdrop request rejected".to_string());
+                Ok("Airdrop request rejected".to_string())
             }
         })
     }
@@ -361,7 +332,7 @@ impl Store {
             }
         }
 
-        if icrc1total > Nat::from(0u32) {
+        if icrc1total > 0u32 {
             let balance = Store::balance_check_icrc(canister_id, &icrc1total).await;
             match balance {
                 Ok(_) => {}
@@ -377,13 +348,10 @@ impl Store {
             let mut data = data.borrow_mut();
             let airdrop_request = data.airdrop_requests.get_mut(request_id);
 
-            match airdrop_request {
-                Some(_request) => {
-                    if _request.data.status == Status::Pending {
-                        _request.data.status = Status::Expired;
-                    }
+            if let Some(_request) = airdrop_request {
+                if _request.data.status == Status::Pending {
+                    _request.data.status = Status::Expired;
                 }
-                None => {}
             }
         })
     }

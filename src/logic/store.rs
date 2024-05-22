@@ -9,7 +9,7 @@ use crate::ledger_declarations::types::{
     WhitelistRequestData,
 };
 
-pub static DAY_IN_NANOS: u64 = Duration::from_secs(1 * 24 * 60 * 60).as_nanos() as u64;
+pub static DAY_IN_NANOS: u64 = Duration::from_secs(24 * 60 * 60).as_nanos() as u64;
 
 #[derive(Deserialize, CandidType)]
 pub struct Store {
@@ -63,7 +63,7 @@ impl Store {
     pub fn init(owner: Principal) {
         DATA.with(|data| {
             let mut data = data.borrow_mut();
-            data.owner = owner.clone();
+            data.owner = owner;
             data.whitelist.push(owner);
         });
     }
@@ -76,8 +76,7 @@ impl Store {
                 return Err("Caller is not whitelisted".to_string());
             };
 
-            let error = data.airdrop_error.get(&request_id).clone();
-            match error {
+            match data.airdrop_error.get(&request_id) {
                 Some(error) => Ok(error.clone()),
                 None => Err("No error found".to_string()),
             }
@@ -85,13 +84,7 @@ impl Store {
     }
 
     pub fn get_token_list() -> Vec<(Principal, TokenStandard)> {
-        DATA.with(|data| {
-            let data = data.borrow();
-            data.tokens
-                .iter()
-                .map(|(canister_id, standard)| (canister_id.clone(), standard.clone()))
-                .collect()
-        })
+        DATA.with(|data| data.borrow().tokens.clone().into_iter().collect())
     }
 
     pub fn add_token_to_list(
@@ -99,9 +92,7 @@ impl Store {
         canister_id: Principal,
         standard: TokenStandard,
     ) -> Result<(), String> {
-        if let Err(err) = Self::is_whitelisted(&caller) {
-            return Err(err);
-        }
+        Self::is_whitelisted(&caller)?;
 
         DATA.with(|data| {
             let mut data = data.borrow_mut();
@@ -111,9 +102,7 @@ impl Store {
     }
 
     pub fn remove_token_from_list(caller: Principal, canister_id: Principal) -> Result<(), String> {
-        if let Err(err) = Self::is_whitelisted(&caller) {
-            return Err(err);
-        }
+        Self::is_whitelisted(&caller)?;
 
         DATA.with(|data| {
             let mut data = data.borrow_mut();
@@ -135,7 +124,7 @@ impl Store {
 
     pub fn check_duplicate_vote(caller: &Principal, votes: &Votes) -> Result<(), String> {
         if votes.approvals.contains(caller) {
-            return Err("Approval vote already cast".to_string());
+            Err("Approval vote already cast".to_string())
         } else if votes.rejections.contains(caller) {
             return Err("Rejection vote already cast".to_string());
         } else {
