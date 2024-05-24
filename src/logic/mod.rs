@@ -1,6 +1,5 @@
 pub mod airdrop_logic;
 pub mod consts;
-mod icrc;
 pub mod transfer_logic;
 pub mod whitelist_logic;
 

@@ -3,13 +3,14 @@ use ic_cdk::{api::time, id};
 use icrc_ledger_types::icrc1::{account::Account, transfer::TransferArg};
 
 use crate::{
-    helpers::votes::get_request_majority,
+    helpers::{
+        icrc::{icrc1_balance_of, icrc1_transfer},
+        votes::get_request_majority,
+    },
     models::{Error, Request, Status, TransferRequest, TransferRequestEntry, Vote, VoteResponse},
     result::CanisterResult,
     storage::{RequestStorage, StorageQueryable, TransferRequestStorage, WhitelistStorage},
 };
-
-use super::icrc::{icrc1_balance_of, icrc1_transfer};
 
 pub struct TransferLogic;
 
