@@ -6,7 +6,7 @@ use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
 };
 
-use types::models::{AirdropRequest, AirdropTransfers, TransferRequest, WhitelistRequest};
+use types::{models::AirdropTransfers, Proposal};
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -16,12 +16,12 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
 pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(0);
-pub static WHITELIST_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static TRANSFER_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static TRANSFER_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(3);
-pub static AIRDROP_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(2);
+
+pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(3);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -39,19 +39,11 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(WHITELIST_MEMORY_ID)))
     );
 
-    pub static WHITELIST_REQUESTS: StorageRef<u64, WhitelistRequest> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(WHITELIST_REQUESTS_MEMORY_ID)))
-    );
-
-    pub static TRANSFER_REQUESTS: StorageRef<u64, TransferRequest> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(TRANSFER_REQUESTS_MEMORY_ID)))
-    );
-
     pub static AIRDROP_TRANSFERS: StorageRef<u64, AirdropTransfers> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(AIRDROP_TRANSFERS_MEMORY_ID)))
     );
 
-    pub static AIRDROP_REQUESTS: StorageRef<u64, AirdropRequest> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(AIRDROP_REQUESTS_MEMORY_ID)))
+    pub static PROPOSALS: StorageRef<u64, Proposal> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(PROPOSALS_MEMORY_ID)))
     );
 }

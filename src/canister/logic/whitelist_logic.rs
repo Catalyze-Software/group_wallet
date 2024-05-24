@@ -1,15 +1,13 @@
 use candid::Principal;
+use types::{Error, ValidateField, ValidationType, WhitelistEntry};
 
-use crate::helpers::votes::get_request_majority;
-use crate::result::CanisterResult;
-use crate::storage::{
-    RequestStorage, StorageInsertable, StorageQueryable, StorageUpdateable,
-    WhitelistRequestStorage, WhitelistStorage,
+use crate::{
+    helpers::validator::Validator,
+    result::CanisterResult,
+    storage::{StorageInsertable, StorageQueryable, WhitelistStorage},
 };
-use types::{
-    Error, Status, Vote, VoteResponse, WhitelistRequest, WhitelistRequestEntry,
-    WhitelistRequestKind,
-};
+
+use super::{MAX_WHITELISTED, MIN_WHITELISTED};
 
 pub struct WhitelistLogic;
 
@@ -21,80 +19,39 @@ impl WhitelistLogic {
             .collect()
     }
 
-    pub fn get_requests(status: Option<Status>) -> Vec<WhitelistRequestEntry> {
-        WhitelistRequestStorage::get_requests_by_status(status)
-    }
-
-    pub fn request(
-        caller: Principal,
-        kind: WhitelistRequestKind,
-    ) -> CanisterResult<WhitelistRequestEntry> {
-        let whitelisted = WhitelistStorage::contains(&caller);
-        let duplicate = WhitelistRequestStorage::find(|_, req| {
-            req.kind.principal() == &caller && req.details.status == Status::Pending
-        });
-
-        match kind {
-            WhitelistRequestKind::Add(_) => {
-                if duplicate.is_some() {
-                    return Err(Error::duplicate().add_message("Already a pending add request"));
-                }
-                if whitelisted {
-                    return Err(Error::duplicate().add_message("Principal already whitelisted"));
-                }
-            }
-            WhitelistRequestKind::Remove(_) => {
-                if duplicate.is_some() {
-                    return Err(Error::duplicate().add_message("Already a pending remove request"));
-                }
-                if !whitelisted {
-                    return Err(Error::not_found().add_message("Principal not whitelisted"));
-                }
-            }
-        };
-
-        WhitelistRequestStorage::new_request(caller, WhitelistRequest::new(kind))
-    }
-
-    pub fn vote_request(
-        caller: Principal,
-        id: u64,
-        vote: Vote,
-    ) -> CanisterResult<WhitelistRequestEntry> {
-        let (_, req) = WhitelistRequestStorage::vote_request(caller, id, vote)?;
-
-        match Self::get_request_majority(id)? {
-            VoteResponse::Approve => Self::approve_request(id),
-            VoteResponse::Reject => WhitelistRequestStorage::reject_request(id, false),
-            VoteResponse::Deadlock => WhitelistRequestStorage::reject_request(id, true),
-            VoteResponse::NotReached => Ok((id, req)),
-        }
-    }
-
-    fn get_request_majority(id: u64) -> CanisterResult<VoteResponse> {
-        let (_, req) = WhitelistRequestStorage::get(id)?;
-
-        let mut whitelist = WhitelistStorage::get_all();
-
-        if let WhitelistRequestKind::Remove(principal) = req.kind {
-            whitelist.retain(|(_, p)| p != &principal);
+    pub fn add(principal: Principal) -> CanisterResult<WhitelistEntry> {
+        if WhitelistStorage::contains(&principal) {
+            return Err(Error::bad_request().add_message("Principal already exists in whitelist"));
         }
 
-        Ok(get_request_majority(whitelist, &req.details.votes))
+        Validator::new(vec![ValidateField(
+            ValidationType::Count(
+                WhitelistStorage::get_all().len(),
+                MIN_WHITELISTED,
+                MAX_WHITELISTED,
+            ),
+            "whitelisted".to_owned(),
+        )])
+        .validate()?;
+
+        WhitelistStorage::insert(principal)
     }
 
-    fn approve_request(id: u64) -> CanisterResult<WhitelistRequestEntry> {
-        let (_, req) = WhitelistRequestStorage::approve_request(id)?;
+    pub fn remove(principal: Principal) -> CanisterResult<()> {
+        let (id, _) = WhitelistStorage::find(|_, value| value == &principal)
+            .ok_or(Error::not_found().add_message("Principal does not exist in whitelist"))?;
 
-        match req.kind {
-            WhitelistRequestKind::Add(principal) => {
-                WhitelistStorage::insert(principal)?;
-            }
-            WhitelistRequestKind::Remove(principal) => {
-                WhitelistStorage::remove_by_value(&principal)?;
-            }
-        }
+        Validator::new(vec![ValidateField(
+            ValidationType::Count(
+                WhitelistStorage::get_all().len() - 1,
+                MIN_WHITELISTED,
+                MAX_WHITELISTED,
+            ),
+            "whitelisted".to_owned(),
+        )])
+        .validate()?;
 
-        Ok((id, req))
+        WhitelistStorage::remove(id);
+        Ok(())
     }
 }

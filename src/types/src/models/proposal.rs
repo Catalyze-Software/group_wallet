@@ -1,53 +1,55 @@
+use crate::impl_storable_for;
 use candid::{CandidType, Principal};
-use ic_cdk::{api::time, caller};
+use icrc_ledger_types::icrc1::transfer::TransferArg;
 use serde::Deserialize;
 
 use super::{votes::Votes, Vote};
 
-pub trait Request {
-    fn details_mut(&mut self) -> &mut RequestDetails;
+impl_storable_for!(Proposal);
 
-    fn details(&self) -> &RequestDetails;
-
-    fn update_status(&mut self, status: Status) {
-        self.details_mut().update_status(status);
-    }
-
-    fn set_sent_at(&mut self, sent_at: u64) {
-        self.details_mut().set_sent_at(sent_at)
-    }
-
-    fn status(&self) -> Status {
-        self.details().status.clone()
-    }
-
-    fn add_vote(&mut self, caller: Principal, vote: Vote) {
-        self.details_mut().add_vote(caller, vote);
-    }
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
+pub struct Proposal {
+    pub status: Status,
+    pub votes: Votes,
+    pub creator: Principal,
+    pub sent_at: Option<u64>,
+    pub created_at: u64,
+    pub content: Content,
 }
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
-pub struct RequestDetails {
-    pub status: Status,
-    pub votes: Votes,
-    pub requested_by: Principal,
-    pub sent_at: Option<u64>,
-    pub created_at: u64,
+pub struct AirdropProposalContent {
+    pub canister_id: Principal,
+    pub args: Vec<TransferArg>,
 }
 
-impl Default for RequestDetails {
-    fn default() -> Self {
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
+pub struct TransferProposalContent {
+    pub canister_id: Principal,
+    pub args: TransferArg,
+}
+
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
+pub enum Content {
+    Airdrop(AirdropProposalContent),
+    Transfer(TransferProposalContent),
+}
+
+impl Proposal {
+    pub fn new(creator: Principal, content: Content) -> Self {
         Self {
             status: Status::Pending,
             votes: Votes::default(),
-            requested_by: caller(),
+            creator,
             sent_at: None,
-            created_at: time(),
+            created_at: ic_cdk::api::time(),
+            content,
         }
     }
-}
+    pub fn status(&self) -> Status {
+        self.status.clone()
+    }
 
-impl RequestDetails {
     pub fn add_vote(&mut self, caller: Principal, vote: Vote) {
         match vote {
             Vote::Approve => self.add_approve_vote(caller),
@@ -75,6 +77,8 @@ impl RequestDetails {
         self.sent_at = Some(sent_at);
     }
 }
+
+pub type ProposalEntry = (u64, Proposal);
 
 #[derive(CandidType, Deserialize, PartialEq, Eq, Clone)]
 pub enum Status {

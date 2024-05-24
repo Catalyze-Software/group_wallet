@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::impl_storable_for;
 
-use super::request::Status;
+use super::proposal::Status;
 
 impl_storable_for!(AirdropTransfer);
 

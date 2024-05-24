@@ -1,6 +1,6 @@
-# Internet Computer Multisig Ledger Canister
+# Internet Computer Group Wallet Ledger Canister
 
-This project hosts a multisig ledger canister on the Internet Computer, designed to manage whitelist approvals, transactions, and airdrops through a multisig mechanism. It allows multiple parties to participate in the decision-making process for approving critical operations within a decentralized environment.
+This project hosts a group wallet ledger canister on the Internet Computer, designed to manage whitelist approvals, transactions, and airdrops through a voting mechanism. It allows multiple parties to participate in the decision-making process for approving critical operations within a decentralized environment.
 
 ## Features
 

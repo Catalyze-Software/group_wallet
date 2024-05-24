@@ -8,7 +8,7 @@ pub enum Vote {
 }
 
 #[derive(CandidType, Deserialize, PartialEq, Eq)]
-pub enum VoteResponse {
+pub enum TallyResult {
     Approve,
     Reject,
     Deadlock,

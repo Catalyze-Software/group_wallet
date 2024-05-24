@@ -1,18 +1,16 @@
 use candid::{Nat, Principal};
-use ic_cdk::api::time;
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 
 use types::{
-    AirdropRequest, AirdropRequestEntry, AirdropTransfer, AirdropTransfers, Error, Request, Status,
-    Vote, VoteResponse,
+    AirdropProposalContent, AirdropTransfer, AirdropTransfers,
+    Status,
 };
 
 use crate::{
-    helpers::votes::get_request_majority,
     result::CanisterResult,
     storage::{
-        AirdropRequestStorage, AirdropTransferStorage, RequestStorage, StorageInsertableByKey,
-        StorageQueryable, WhitelistStorage,
+         AirdropTransferStorage, StorageInsertableByKey,
+        StorageQueryable,
     },
 };
 
@@ -21,57 +19,16 @@ use super::transfer_logic::TransferLogic;
 pub struct AirdropLogic;
 
 impl AirdropLogic {
-    pub fn get_requests(status: Option<Status>) -> Vec<AirdropRequestEntry> {
-        AirdropRequestStorage::get_requests_by_status(status)
-    }
-
-    pub async fn request(
-        caller: Principal,
-        canister_id: Principal,
-        transfer_args: Vec<TransferArg>,
-    ) -> CanisterResult<AirdropRequestEntry> {
-        Self::check_balance(canister_id, transfer_args.clone()).await?;
-
-        AirdropRequestStorage::new_request(caller, AirdropRequest::new(canister_id, transfer_args))
-    }
-
     pub fn get_transfers(_caller: Principal, id: u64) -> CanisterResult<AirdropTransfers> {
         let (_, txs) = AirdropTransferStorage::get(id)?;
         Ok(txs)
     }
 
-    pub fn vote_request(
-        caller: Principal,
-        id: u64,
-        vote: Vote,
-    ) -> CanisterResult<AirdropRequestEntry> {
-        let (_, req) = AirdropRequestStorage::vote_request(caller, id, vote)?;
-
-        match get_request_majority(WhitelistStorage::get_all(), &req.details.votes) {
-            VoteResponse::Approve => AirdropRequestStorage::approve_request(id),
-            VoteResponse::Reject => AirdropRequestStorage::reject_request(id, false),
-            VoteResponse::Deadlock => AirdropRequestStorage::reject_request(id, true),
-            VoteResponse::NotReached => Ok((id, req)),
-        }
-    }
-
-    pub async fn execute_request(id: u64) -> CanisterResult<()> {
-        let (_, req) = AirdropRequestStorage::get(id)?;
-
-        if req.status() != Status::Approved {
-            return Err(Error::bad_request().add_message("Request is not approved"));
-        }
-
-        if req.details().sent_at.is_some() {
-            return Err(Error::bad_request().add_message("Request already executed"));
-        }
-
-        let (_, req) = AirdropRequestStorage::set_sent_at(id, time())?;
-
+    pub async fn execute_airdrop(id: u64, content: AirdropProposalContent) -> CanisterResult<()> {
         let mut transfers = Vec::<AirdropTransfer>::default();
 
-        for args in req.transfer_args {
-            let is_ok = TransferLogic::transfer(req.canister_id, args.clone())
+        for args in content.args {
+            let is_ok = TransferLogic::transfer(content.canister_id, args.clone())
                 .await
                 .is_ok();
 
@@ -84,19 +41,19 @@ impl AirdropLogic {
                 status,
                 receiver: args.to.owner,
                 amount: args.amount,
-                canister_id: req.canister_id,
+                canister_id: content.canister_id,
             };
 
             transfers.push(details);
         }
 
-        // ID equals to the request id
+        // ID tied to the proposal id
         AirdropTransferStorage::insert_by_key(id, AirdropTransfers(transfers))?;
 
         Ok(())
     }
 
-    async fn check_balance(
+    pub async fn check_balance(
         canister_id: Principal,
         transfer_args: Vec<TransferArg>,
     ) -> CanisterResult<()> {

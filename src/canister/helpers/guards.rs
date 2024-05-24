@@ -27,8 +27,16 @@ pub fn is_whitelisted() -> Result<(), String> {
         .to_string())
 }
 
-pub fn unsupported() -> Result<(), String> {
-    Err(Error::unsupported()
-        .add_message("This call is unsupported")
+pub fn is_owner() -> Result<(), String> {
+    is_authorized()?;
+    is_whitelisted()?;
+
+    let (_, owner) = WhitelistStorage::get_owner().map_err(|_| "Failed to get owner")?;
+    if caller() == owner {
+        return Ok(());
+    }
+
+    Err(Error::unauthorized()
+        .add_message("Principal is not the owner")
         .to_string())
 }
