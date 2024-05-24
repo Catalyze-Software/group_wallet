@@ -2,12 +2,13 @@ use candid::{Nat, Principal};
 use ic_cdk::{api::time, id};
 use icrc_ledger_types::icrc1::{account::Account, transfer::TransferArg};
 
+use types::{Error, Request, Status, TransferRequest, TransferRequestEntry, Vote, VoteResponse};
+
 use crate::{
     helpers::{
         icrc::{icrc1_balance_of, icrc1_transfer},
         votes::get_request_majority,
     },
-    models::{Error, Request, Status, TransferRequest, TransferRequestEntry, Vote, VoteResponse},
     result::CanisterResult,
     storage::{RequestStorage, StorageQueryable, TransferRequestStorage, WhitelistStorage},
 };

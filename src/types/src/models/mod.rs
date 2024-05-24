@@ -2,6 +2,7 @@ mod airdrop_request;
 mod airdrop_transfer;
 mod airdrop_transfers;
 mod error;
+mod macros;
 mod request;
 mod transfer_request;
 mod validation;

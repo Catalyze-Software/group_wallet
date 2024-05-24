@@ -1,9 +1,9 @@
 use ic_stable_structures::memory_manager::MemoryId;
 
-use crate::models::AirdropRequest;
+use types::AirdropRequest;
 
 use super::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, RequestStorage,
+    RequestStorage, StaticStorageRef, Storage, StorageInsertable, StorageQueryable,
     StorageUpdateable, AIRDROP_REQUESTS, AIRDROP_REQUESTS_MEMORY_ID,
 };
 

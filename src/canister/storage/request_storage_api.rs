@@ -4,11 +4,9 @@ use candid::Principal;
 use ic_cdk_timers::set_timer;
 use ic_stable_structures::Storable;
 
-use crate::{
-    logic::DAY_IN_NANOS,
-    models::{Error, Request, Status, Vote},
-    result::CanisterResult,
-};
+use types::{Error, Request, Status, Vote};
+
+use crate::{logic::DAY_IN_NANOS, result::CanisterResult};
 
 use super::{Storage, StorageInsertable, StorageQueryable, StorageUpdateable};
 

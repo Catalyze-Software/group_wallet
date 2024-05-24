@@ -3,11 +3,9 @@ use ic_cdk::{caller, query, update};
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 
 use crate::{
-    helpers::guards::unsupported,
-    logic::airdrop_logic::AirdropLogic,
-    models::{AirdropRequestEntry, AirdropTransfers, Status, Vote},
-    result::CanisterResult,
+    helpers::guards::unsupported, logic::airdrop_logic::AirdropLogic, result::CanisterResult,
 };
+use types::{AirdropRequestEntry, AirdropTransfers, Status, Vote};
 
 #[query(guard = "unsupported")]
 pub fn get_airdrop_requests(status: Option<Status>) -> Vec<AirdropRequestEntry> {

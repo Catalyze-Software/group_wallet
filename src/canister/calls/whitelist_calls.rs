@@ -1,12 +1,9 @@
 use candid::Principal;
 use ic_cdk::{caller, query, update};
 
-use crate::{
-    helpers::guards::is_whitelisted,
-    logic::WhitelistLogic,
-    models::{Status, Vote, WhitelistRequestEntry, WhitelistRequestKind},
-    result::CanisterResult,
-};
+use types::{Status, Vote, WhitelistRequestEntry, WhitelistRequestKind};
+
+use crate::{helpers::guards::is_whitelisted, logic::WhitelistLogic, result::CanisterResult};
 
 #[query]
 pub fn get_whitelist() -> Vec<Principal> {

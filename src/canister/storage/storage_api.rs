@@ -1,6 +1,6 @@
 use ic_stable_structures::{memory_manager::MemoryId, StableBTreeMap, Storable};
 
-use crate::models::Error;
+use types::models::Error;
 
 use super::state::{StaticStorageRef, MEMORY_MANAGER};
 

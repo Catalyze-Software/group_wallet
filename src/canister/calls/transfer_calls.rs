@@ -3,11 +3,9 @@ use ic_cdk::{caller, query, update};
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 
 use crate::{
-    helpers::guards::is_whitelisted,
-    logic::transfer_logic::TransferLogic,
-    models::{Status, TransferRequestEntry, Vote},
-    result::CanisterResult,
+    helpers::guards::is_whitelisted, logic::transfer_logic::TransferLogic, result::CanisterResult,
 };
+use types::{Status, TransferRequestEntry, Vote};
 
 #[query]
 pub fn get_transfer_requests(status: Option<Status>) -> Vec<TransferRequestEntry> {

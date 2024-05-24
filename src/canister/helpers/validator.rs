@@ -1,4 +1,4 @@
-use crate::models::{Error, ValidateField, ValidationResponse, ValidationType};
+use types::{Error, ValidateField, ValidationResponse, ValidationType};
 
 use super::str::str_len;
 

@@ -1,4 +1,4 @@
-use crate::models::{VoteResponse, Votes, WhitelistEntry};
+use types::{VoteResponse, Votes, WhitelistEntry};
 
 pub fn get_request_majority(whitelist: Vec<WhitelistEntry>, votes: &Votes) -> VoteResponse {
     let whitelist_count = whitelist.len() as f32;

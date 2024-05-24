@@ -2,12 +2,13 @@ use candid::{Nat, Principal};
 use ic_cdk::api::time;
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 
+use types::{
+    AirdropRequest, AirdropRequestEntry, AirdropTransfer, AirdropTransfers, Error, Request, Status,
+    Vote, VoteResponse,
+};
+
 use crate::{
     helpers::votes::get_request_majority,
-    models::{
-        AirdropRequest, AirdropRequestEntry, AirdropTransfer, AirdropTransfers, Error, Request,
-        Status, Vote, VoteResponse,
-    },
     result::CanisterResult,
     storage::{
         AirdropRequestStorage, AirdropTransferStorage, RequestStorage, StorageInsertableByKey,

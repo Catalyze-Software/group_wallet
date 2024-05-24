@@ -1,9 +1,9 @@
 use ic_stable_structures::memory_manager::MemoryId;
 
-use crate::models::WhitelistRequest;
+use types::models::WhitelistRequest;
 
 use super::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, RequestStorage,
+    RequestStorage, StaticStorageRef, Storage, StorageInsertable, StorageQueryable,
     StorageUpdateable, WHITELIST_REQUESTS, WHITELIST_REQUESTS_MEMORY_ID,
 };
 

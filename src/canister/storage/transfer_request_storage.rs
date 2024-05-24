@@ -1,6 +1,6 @@
 use ic_stable_structures::memory_manager::MemoryId;
 
-use crate::models::TransferRequest;
+use types::models::TransferRequest;
 
 use super::{
     RequestStorage, StaticStorageRef, Storage, StorageInsertable, StorageQueryable,

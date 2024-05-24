@@ -6,7 +6,7 @@ use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
 };
 
-use crate::models::{AirdropRequest, AirdropTransfers, TransferRequest, WhitelistRequest};
+use types::models::{AirdropRequest, AirdropTransfers, TransferRequest, WhitelistRequest};
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 

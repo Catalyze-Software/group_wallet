@@ -1,14 +1,14 @@
 use candid::Principal;
 
 use crate::helpers::votes::get_request_majority;
-use crate::models::{
-    Error, Status, Vote, VoteResponse, WhitelistRequest, WhitelistRequestEntry,
-    WhitelistRequestKind,
-};
 use crate::result::CanisterResult;
 use crate::storage::{
     RequestStorage, StorageInsertable, StorageQueryable, StorageUpdateable,
     WhitelistRequestStorage, WhitelistStorage,
+};
+use types::{
+    Error, Status, Vote, VoteResponse, WhitelistRequest, WhitelistRequestEntry,
+    WhitelistRequestKind,
 };
 
 pub struct WhitelistLogic;

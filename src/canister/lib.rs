@@ -4,7 +4,6 @@ use logic::DAY_IN_NANOS;
 
 pub mod helpers;
 pub mod logic;
-pub mod models;
 pub mod result;
 pub mod storage;
 
@@ -24,12 +23,12 @@ fn get_time_out() -> u64 {
 // Hacky way to expose the candid interface to the outside world
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
-    use crate::models::{
+    use crate::result::CanisterResult;
+    use icrc_ledger_types::icrc1::transfer::TransferArg;
+    use types::{
         AirdropRequestEntry, AirdropTransfers, Status, TransferRequestEntry, Vote,
         WhitelistRequestEntry, WhitelistRequestKind,
     };
-    use crate::result::CanisterResult;
-    use icrc_ledger_types::icrc1::transfer::TransferArg;
 
     use candid::export_service;
     export_service!();

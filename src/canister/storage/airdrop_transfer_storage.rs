@@ -1,6 +1,6 @@
 use ic_stable_structures::memory_manager::MemoryId;
 
-use crate::models::AirdropTransfers;
+use types::AirdropTransfers;
 
 use super::{
     StaticStorageRef, Storage, StorageInsertableByKey, StorageQueryable, StorageUpdateable,

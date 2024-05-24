@@ -1,6 +1,5 @@
 pub mod airdrop_request_storage;
 pub mod airdrop_transfer_storage;
-pub mod macros;
 pub mod request_storage_api;
 pub mod state;
 pub mod storage_api;

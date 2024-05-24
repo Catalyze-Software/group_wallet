@@ -1,10 +1,9 @@
 use candid::Principal;
 use ic_cdk::caller;
 
-use crate::{
-    models::Error,
-    storage::{StorageQueryable, WhitelistStorage},
-};
+use types::Error;
+
+use crate::storage::{StorageQueryable, WhitelistStorage};
 
 pub fn is_authorized() -> Result<(), String> {
     if caller() != Principal::anonymous() {
