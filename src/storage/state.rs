@@ -6,7 +6,7 @@ use ic_stable_structures::{
     DefaultMemoryImpl, StableBTreeMap,
 };
 
-use crate::models::{AirdropRequest, AirdropTransactions, TransactionRequest, WhitelistRequest};
+use crate::models::{AirdropRequest, AirdropTransfers, TransferRequest, WhitelistRequest};
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -18,10 +18,9 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(0);
 pub static WHITELIST_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static TRANSACTION_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static TRANSFER_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(2);
 
-pub static AIRDROP_TRANSACTIONS_MEMORY_ID: MemoryId = MemoryId::new(3);
-pub static AIRDROP_ERRORS_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(3);
 pub static AIRDROP_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(5);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
@@ -44,16 +43,12 @@ thread_local! {
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(WHITELIST_REQUESTS_MEMORY_ID)))
     );
 
-    pub static TRANSACTION_REQUESTS: StorageRef<u64, TransactionRequest> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(TRANSACTION_REQUESTS_MEMORY_ID)))
+    pub static TRANSFER_REQUESTS: StorageRef<u64, TransferRequest> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(TRANSFER_REQUESTS_MEMORY_ID)))
     );
 
-    pub static AIRDROP_TRANSACTIONS: StorageRef<u64, AirdropTransactions> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(AIRDROP_TRANSACTIONS_MEMORY_ID)))
-    );
-
-    pub static AIRDROP_ERRORS: StorageRef<u64, String> = RefCell::new(
-        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(AIRDROP_ERRORS_MEMORY_ID)))
+    pub static AIRDROP_TRANSFERS: StorageRef<u64, AirdropTransfers> = RefCell::new(
+        StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(AIRDROP_TRANSFERS_MEMORY_ID)))
     );
 
     pub static AIRDROP_REQUESTS: StorageRef<u64, AirdropRequest> = RefCell::new(

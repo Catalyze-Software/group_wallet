@@ -61,7 +61,7 @@ pub struct DataCertificate {
     hash_tree: serde_bytes::ByteBuf,
 }
 
-#[derive(CandidType, Deserialize, Clone)]
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Account {
     pub owner: Principal,
     pub subaccount: Option<serde_bytes::ByteBuf>,
@@ -169,7 +169,7 @@ pub struct StandardRecord {
     name: String,
 }
 
-#[derive(CandidType, Deserialize, Clone)]
+#[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct TransferArg {
     pub to: Account,
     pub fee: Option<candid::Nat>,

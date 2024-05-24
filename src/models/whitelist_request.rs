@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::impl_storable_for;
 
-use super::{types::RequestDetails, Status, Vote};
+use super::{request::RequestDetails, Request};
 
 impl_storable_for!(WhitelistRequest);
 
@@ -28,6 +28,16 @@ pub struct WhitelistRequest {
     pub details: RequestDetails,
 }
 
+impl Request for WhitelistRequest {
+    fn details(&self) -> &RequestDetails {
+        &self.details
+    }
+
+    fn details_mut(&mut self) -> &mut RequestDetails {
+        &mut self.details
+    }
+}
+
 impl WhitelistRequest {
     pub fn new(kind: WhitelistRequestKind) -> Self {
         Self {
@@ -36,17 +46,10 @@ impl WhitelistRequest {
         }
     }
 
-    pub fn add_vote(&mut self, caller: Principal, vote: Vote) {
-        self.details.add_vote(caller, vote)
-    }
-
-    pub fn update_status(&mut self, status: Status) {
-        self.details.update_status(status);
-    }
-
     pub fn set_send_at(&mut self, send_at: u64) {
-        self.details.set_send_at(send_at);
+        self.details.set_sent_at(send_at);
     }
 }
 
 pub type WhitelistRequestEntry = (u64, WhitelistRequest);
+pub type WhitelistEntry = (u64, Principal);

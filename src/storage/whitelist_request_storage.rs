@@ -3,8 +3,8 @@ use ic_stable_structures::memory_manager::MemoryId;
 use crate::models::WhitelistRequest;
 
 use super::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable,
-    WHITELIST_REQUESTS, WHITELIST_REQUESTS_MEMORY_ID,
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, RequestStorage,
+    StorageUpdateable, WHITELIST_REQUESTS, WHITELIST_REQUESTS_MEMORY_ID,
 };
 
 pub struct WhitelistRequestStorage;
@@ -24,3 +24,4 @@ impl Storage<u64, WhitelistRequest> for WhitelistRequestStorage {
 impl StorageQueryable<u64, WhitelistRequest> for WhitelistRequestStorage {}
 impl StorageInsertable<WhitelistRequest> for WhitelistRequestStorage {}
 impl StorageUpdateable<u64, WhitelistRequest> for WhitelistRequestStorage {}
+impl RequestStorage<WhitelistRequest> for WhitelistRequestStorage {}

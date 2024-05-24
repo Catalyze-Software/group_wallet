@@ -28,6 +28,10 @@ impl Error {
         }
     }
 
+    pub fn insufficient_balance() -> Self {
+        Self::new(ErrorKind::InsufficientBalance)
+    }
+
     pub fn validation_response(validation_response: Vec<ValidationResponse>) -> Self {
         Self::new(ErrorKind::ValidationError(Box::new(validation_response)))
     }
@@ -40,8 +44,8 @@ impl Error {
         Self::new(ErrorKind::DeserializeError)
     }
 
-    pub fn unexpected() -> Self {
-        Self::new(ErrorKind::Unexpected)
+    pub fn internal() -> Self {
+        Self::new(ErrorKind::Internal)
     }
 
     pub fn not_implemented() -> Self {
@@ -97,13 +101,14 @@ impl Error {
 #[derive(Clone, CandidType, Debug, Deserialize, Serialize)]
 pub enum ErrorKind {
     NotImplemented,
-    Unexpected,
+    Internal,
     Unauthorized,
     NotFound,
     BadRequest,
     Unsupported,
     Duplicate,
     ValidationError(Box<Vec<ValidationResponse>>),
+    InsufficientBalance,
     SerializeError,
     DeserializeError,
 }
@@ -123,13 +128,14 @@ impl fmt::Display for ErrorKind {
         use ErrorKind::*;
         match self {
             NotImplemented => write!(f, "NotImplemented"),
-            Unexpected => write!(f, "Unexpected"),
+            Internal => write!(f, "Internal"),
             Unauthorized => write!(f, "Unauthorized"),
             NotFound => write!(f, "NotFound"),
             BadRequest => write!(f, "BadRequest"),
             Unsupported => write!(f, "Unsupported"),
             Duplicate => write!(f, "Duplicate"),
             ValidationError(_) => write!(f, "ValidationError"),
+            InsufficientBalance => write!(f, "InsufficientBalance"),
             SerializeError => write!(f, "SerializeError"),
             DeserializeError => write!(f, "DeserializeError"),
         }

@@ -8,7 +8,7 @@
 
 pub mod airdrop_logic;
 pub mod consts;
-pub mod transaction_logic;
+pub mod transfer_logic;
 pub mod whitelist_logic;
 
 // pub use airdrop_logic::AirdropLogic;
@@ -58,10 +58,6 @@ pub use whitelist_logic::WhitelistLogic;
 //     }
 // }
 
-// thread_local! {
-//     pub static DATA: RefCell<Store>  = RefCell::new(Store::default());
-// }
-
 // impl Store {
 //     pub fn init(owner: Principal) {
 //         DATA.with(|data| {
@@ -95,15 +91,5 @@ pub use whitelist_logic::WhitelistLogic;
 //                 Err("Caller is not whitelisted".to_string())
 //             }
 //         })
-//     }
-
-//     pub fn check_duplicate_vote(caller: &Principal, votes: &Votes) -> Result<(), String> {
-//         if votes.approvals.contains(caller) {
-//             Err("Approval vote already cast".to_string())
-//         } else if votes.rejections.contains(caller) {
-//             return Err("Rejection vote already cast".to_string());
-//         } else {
-//             Ok(())
-//         }
 //     }
 // }

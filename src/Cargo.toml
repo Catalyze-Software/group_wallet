@@ -1,5 +1,5 @@
 [package]
-name = "multisig"
+name = "group_wallet"
 version = "0.1.0"
 edition = "2021"
 

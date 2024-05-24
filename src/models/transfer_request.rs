@@ -3,19 +3,18 @@ use serde::Deserialize;
 
 use crate::impl_storable_for;
 
-use super::request::RequestDetails;
-use super::{Request, TransferArg};
+use super::{icrc_declaration::TransferArg, request::RequestDetails, Request};
 
-impl_storable_for!(AirdropRequest);
+impl_storable_for!(TransferRequest);
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
-pub struct AirdropRequest {
+pub struct TransferRequest {
+    pub args: TransferArg,
     pub canister_id: Principal,
     pub details: RequestDetails,
-    pub transfer_args: Vec<TransferArg>,
 }
 
-impl Request for AirdropRequest {
+impl Request for TransferRequest {
     fn details(&self) -> &RequestDetails {
         &self.details
     }
@@ -25,14 +24,14 @@ impl Request for AirdropRequest {
     }
 }
 
-impl AirdropRequest {
-    pub fn new(canister_id: Principal, transfer_args: Vec<TransferArg>) -> Self {
+impl TransferRequest {
+    pub fn new(canister_id: Principal, args: TransferArg) -> Self {
         Self {
             canister_id,
+            args,
             details: RequestDetails::default(),
-            transfer_args,
         }
     }
 }
 
-pub type AirdropRequestEntry = (u64, AirdropRequest);
+pub type TransferRequestEntry = (u64, TransferRequest);
