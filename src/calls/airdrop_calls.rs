@@ -1,10 +1,11 @@
 use candid::Principal;
 use ic_cdk::{caller, query, update};
+use icrc_ledger_types::icrc1::transfer::TransferArg;
 
 use crate::{
     helpers::guards::unsupported,
     logic::airdrop_logic::AirdropLogic,
-    models::{AirdropRequestEntry, AirdropTransfers, Status, TransferArg, Vote},
+    models::{AirdropRequestEntry, AirdropTransfers, Status, Vote},
     result::CanisterResult,
 };
 

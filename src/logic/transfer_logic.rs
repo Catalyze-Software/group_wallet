@@ -1,15 +1,15 @@
 use candid::{Nat, Principal};
 use ic_cdk::{api::time, id};
+use icrc_ledger_types::icrc1::{account::Account, transfer::TransferArg};
 
 use crate::{
     helpers::votes::get_request_majority,
-    models::{
-        Account, Error, IcrcService, Request, Status, TransferArg, TransferRequest,
-        TransferRequestEntry, Vote, VoteResponse,
-    },
+    models::{Error, Request, Status, TransferRequest, TransferRequestEntry, Vote, VoteResponse},
     result::CanisterResult,
     storage::{RequestStorage, StorageQueryable, TransferRequestStorage, WhitelistStorage},
 };
+
+use super::icrc::{icrc1_balance_of, icrc1_transfer};
 
 pub struct TransferLogic;
 
@@ -45,8 +45,7 @@ impl TransferLogic {
     pub async fn transfer(canister_id: Principal, args: TransferArg) -> CanisterResult<()> {
         Self::check_balance(canister_id, &args.amount).await?;
 
-        IcrcService(canister_id)
-            .icrc1_transfer(args)
+        icrc1_transfer(canister_id, args)
             .await
             .map_err(|(_, e)| Error::internal().add_message(&format!("transfer failed: {e}")))?;
         Ok(())
@@ -68,15 +67,15 @@ impl TransferLogic {
     }
 
     pub async fn check_balance(canister_id: Principal, amount: &Nat) -> CanisterResult<()> {
-        let (balance,) = IcrcService(canister_id)
-            .icrc1_balance_of(Account {
+        let (balance,) = icrc1_balance_of(
+            canister_id,
+            Account {
                 owner: id(),
                 subaccount: None,
-            })
-            .await
-            .map_err(|(_, e)| {
-                Error::internal().add_message(&format!("balance check failed: {e}"))
-            })?;
+            },
+        )
+        .await
+        .map_err(|(_, e)| Error::internal().add_message(&format!("balance check failed: {e}")))?;
 
         if &balance < amount {
             return Err(Error::insufficient_balance());

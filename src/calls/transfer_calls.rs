@@ -1,10 +1,11 @@
 use candid::Principal;
 use ic_cdk::{caller, query, update};
+use icrc_ledger_types::icrc1::transfer::TransferArg;
 
 use crate::{
     helpers::guards::is_whitelisted,
     logic::transfer_logic::TransferLogic,
-    models::{Status, TransferArg, TransferRequestEntry, Vote},
+    models::{Status, TransferRequestEntry, Vote},
     result::CanisterResult,
 };
 

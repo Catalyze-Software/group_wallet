@@ -25,10 +25,11 @@ fn get_time_out() -> u64 {
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
     use crate::models::{
-        AirdropRequestEntry, AirdropTransfers, Status, TransferArg, TransferRequestEntry, Vote,
+        AirdropRequestEntry, AirdropTransfers, Status, TransferRequestEntry, Vote,
         WhitelistRequestEntry, WhitelistRequestKind,
     };
     use crate::result::CanisterResult;
+    use icrc_ledger_types::icrc1::transfer::TransferArg;
 
     use candid::export_service;
     export_service!();

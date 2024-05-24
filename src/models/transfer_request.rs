@@ -1,9 +1,10 @@
 use candid::{CandidType, Principal};
+use icrc_ledger_types::icrc1::transfer::TransferArg;
 use serde::Deserialize;
 
 use crate::impl_storable_for;
 
-use super::{icrc_declaration::TransferArg, request::RequestDetails, Request};
+use super::{request::RequestDetails, Request};
 
 impl_storable_for!(TransferRequest);
 

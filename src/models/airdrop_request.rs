@@ -1,10 +1,11 @@
 use candid::{CandidType, Principal};
+use icrc_ledger_types::icrc1::transfer::TransferArg;
 use serde::Deserialize;
 
 use crate::impl_storable_for;
 
 use super::request::RequestDetails;
-use super::{Request, TransferArg};
+use super::Request;
 
 impl_storable_for!(AirdropRequest);
 
