@@ -39,6 +39,6 @@ pub fn candid() {
     use std::path::PathBuf;
 
     let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    let dir = dir.parent().unwrap().join("candid");
+    let dir = dir.parent().unwrap().join("../candid");
     write(dir.join("multisig.did"), __export_did_tmp_()).expect("Write failed.");
 }
