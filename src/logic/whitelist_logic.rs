@@ -29,7 +29,6 @@ impl WhitelistLogic {
         caller: Principal,
         kind: WhitelistRequestKind,
     ) -> CanisterResult<WhitelistRequestEntry> {
-        // TODO: Add whitelist guard
         let whitelisted = WhitelistStorage::contains(&caller);
         let duplicate = WhitelistRequestStorage::find(|_, req| {
             req.kind.principal() == &caller && req.details.status == Status::Pending
@@ -62,7 +61,6 @@ impl WhitelistLogic {
         id: u64,
         vote: Vote,
     ) -> CanisterResult<WhitelistRequestEntry> {
-        // TODO: Add whitelist guard
         let (_, req) = WhitelistRequestStorage::vote_request(caller, id, vote)?;
 
         match Self::get_request_majority(id)? {

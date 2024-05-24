@@ -1,4 +1,4 @@
-use candid::Principal;
+use candid::{Nat, Principal};
 use ic_cdk::api::time;
 
 use crate::{
@@ -16,7 +16,6 @@ use crate::{
 
 use super::transfer_logic::TransferLogic;
 
-// TODO: mark with unsupported guard
 pub struct AirdropLogic;
 
 impl AirdropLogic {
@@ -24,19 +23,17 @@ impl AirdropLogic {
         AirdropRequestStorage::get_requests_by_status(status)
     }
 
-    pub fn request(
+    pub async fn request(
         caller: Principal,
         canister_id: Principal,
         transfer_args: Vec<TransferArg>,
     ) -> CanisterResult<AirdropRequestEntry> {
-        // TODO: whitelisted guard
-        // TODO: add Canister balance guard
+        Self::check_balance(canister_id, transfer_args.clone()).await?;
 
         AirdropRequestStorage::new_request(caller, AirdropRequest::new(canister_id, transfer_args))
     }
 
     pub fn get_transfers(_caller: Principal, id: u64) -> CanisterResult<AirdropTransfers> {
-        // TODO: whitelisted guard
         let (_, txs) = AirdropTransferStorage::get(id)?;
         Ok(txs)
     }
@@ -46,7 +43,6 @@ impl AirdropLogic {
         id: u64,
         vote: Vote,
     ) -> CanisterResult<AirdropRequestEntry> {
-        // TODO: Add whitelist guard
         let (_, req) = AirdropRequestStorage::vote_request(caller, id, vote)?;
 
         match get_request_majority(WhitelistStorage::get_all(), &req.details.votes) {
@@ -57,9 +53,12 @@ impl AirdropLogic {
         }
     }
 
-    pub async fn execute_request(_caller: Principal, id: u64) -> CanisterResult<()> {
-        // TODO: Add whitelist guard
+    pub async fn execute_request(id: u64) -> CanisterResult<()> {
         let (_, req) = AirdropRequestStorage::get(id)?;
+
+        if req.status() != Status::Approved {
+            return Err(Error::bad_request().add_message("Request is not approved"));
+        }
 
         if req.details().sent_at.is_some() {
             return Err(Error::bad_request().add_message("Request already executed"));
@@ -94,42 +93,19 @@ impl AirdropLogic {
 
         Ok(())
     }
+
+    async fn check_balance(
+        canister_id: Principal,
+        transfer_args: Vec<TransferArg>,
+    ) -> CanisterResult<()> {
+        let total = transfer_args
+            .iter()
+            .fold(Nat::from(0u32), |acc, arg| acc + arg.amount.clone());
+
+        if total > 0u32 {
+            return TransferLogic::check_balance(canister_id, &total).await;
+        }
+
+        Ok(())
+    }
 }
-
-//     async fn check_balance(
-//         canister_id: Principal,
-//         transfer_args: Vec<TransferRequestType>,
-//     ) -> Result<(), String> {
-//         let mut dip20total = 0;
-//         let mut icrc1total: Nat = Nat::from(0u32);
-
-//         for args in transfer_args {
-//             match args {
-//                 TransferRequestType::DIP20(_args) => {
-//                     dip20total += _args.amount;
-//                 }
-//                 TransferRequestType::ICRC1(_args) => {
-//                     icrc1total += _args.amount;
-//                 }
-//             }
-//         }
-
-//         if dip20total > 0 {
-//             let balance = Store::balance_check_dip20(canister_id, &dip20total).await;
-//             match balance {
-//                 Ok(_) => {}
-//                 Err(err) => return Err(err),
-//             }
-//         }
-
-//         if icrc1total > 0u32 {
-//             let balance = Store::balance_check_icrc(canister_id, &icrc1total).await;
-//             match balance {
-//                 Ok(_) => {}
-//                 Err(err) => return Err(err),
-//             }
-//         }
-
-//         Ok(())
-//     }
-// }
