@@ -95,20 +95,14 @@ impl WhitelistLogic {
             return Err(Error::bad_request().add_message("Cannot switch anonymous principal"));
         }
 
-        if !WhitelistStorage::contains(&remove) {
-            return Err(
-                Error::bad_request().add_message("Remove principal does not exist in whitelist")
-            );
-        }
+        let (id, _) = WhitelistStorage::find(|_, value| value == &remove)
+            .ok_or(Error::not_found().add_message("Principal does not exist in whitelist"))?;
 
         if WhitelistStorage::contains(&add) {
             return Err(
                 Error::bad_request().add_message("Add principal already exists in whitelist")
             );
         }
-
-        let (id, _) = WhitelistStorage::find(|_, value| value == &remove)
-            .ok_or(Error::not_found().add_message("Principal does not exist in whitelist"))?;
 
         WhitelistStorage::update(id, add)
     }
