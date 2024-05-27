@@ -25,9 +25,9 @@ impl TransferLogic {
         Self::transfer(content.canister_id, content.args).await
     }
 
-    pub async fn check_balance(canister_id: Principal, amount: &Nat) -> CanisterResult<()> {
+    pub async fn check_balance(principal: Principal, amount: &Nat) -> CanisterResult<()> {
         let (balance,) = icrc1_balance_of(
-            canister_id,
+            principal,
             Account {
                 owner: id(),
                 subaccount: None,

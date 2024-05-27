@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use candid::Principal;
-use ic_cdk::api::time;
+use ic_cdk::{api::time, id};
 use ic_cdk_timers::set_timer;
 use types::{
     Content, Error, Proposal, ProposalEntry, ProposalResponse, Status, TallyResult, Vote, VoteKind,
@@ -39,11 +39,9 @@ impl ProposalLogic {
     pub async fn propose(caller: Principal, content: Content) -> CanisterResult<ProposalEntry> {
         match content.clone() {
             Content::Transfer(content) => {
-                TransferLogic::check_balance(caller, &content.args.amount).await?
+                TransferLogic::check_balance(id(), &content.args.amount).await?
             }
-            Content::Airdrop(content) => {
-                AirdropLogic::check_balance(content.canister_id, content.args).await?
-            }
+            Content::Airdrop(content) => AirdropLogic::check_balance(id(), content.args).await?,
         }
 
         let (id, proposal) = ProposalStorage::insert(Proposal::new(caller, content))?;
