@@ -5,7 +5,7 @@ use types::{Error, ValidateField, ValidationType, WhitelistEntry};
 use crate::{
     helpers::validator::Validator,
     result::CanisterResult,
-    storage::{StorageInsertable, StorageQueryable, WhitelistStorage},
+    storage::{StorageInsertable, StorageQueryable, StorageUpdateable, WhitelistStorage},
 };
 
 use super::{MAX_WHITELISTED, MIN_WHITELISTED};
@@ -21,7 +21,7 @@ impl WhitelistLogic {
 
         let whitelisted_size = whitelisted.len() + 1;
 
-        if whitelisted_size > MIN_WHITELISTED {
+        if whitelisted_size < MIN_WHITELISTED {
             trap(&format!(
                 "At least {MIN_WHITELISTED} principals must be whitelisted."
             ));
@@ -87,6 +87,30 @@ impl WhitelistLogic {
         .validate()?;
 
         WhitelistStorage::remove(id);
+        Ok(())
+    }
+
+    pub fn switch_whitelisted(remove: Principal, add: Principal) -> CanisterResult<()> {
+        if [remove, add].contains(&Principal::anonymous()) {
+            return Err(Error::bad_request().add_message("Cannot switch anonymous principal"));
+        }
+
+        if !WhitelistStorage::contains(&remove) {
+            return Err(
+                Error::bad_request().add_message("Remove principal does not exist in whitelist")
+            );
+        }
+
+        if WhitelistStorage::contains(&add) {
+            return Err(
+                Error::bad_request().add_message("Add principal already exists in whitelist")
+            );
+        }
+
+        let (id, _) = WhitelistStorage::find(|_, value| value == &remove)
+            .ok_or(Error::not_found().add_message("Principal does not exist in whitelist"))?;
+
+        let _ = WhitelistStorage::update(id, add);
         Ok(())
     }
 }

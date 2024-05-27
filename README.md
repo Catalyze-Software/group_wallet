@@ -5,7 +5,7 @@ This project hosts a group wallet ledger canister on the Internet Computer, desi
 ## Features
 
 - **Whitelist Management**: Handle whitelist requests and allow collective voting on these requests.
-- **Transaction Processing**: Manage transaction requests with multisig approvals.
+- **Transaction Processing**: Manage transaction requests with group_wallet approvals.
 - **Airdrop Functionality**: Support airdrop requests and manage related errors and transactions.
 
 ## Requirements
@@ -19,13 +19,9 @@ This project hosts a group wallet ledger canister on the Internet Computer, desi
 Clone the repository and navigate to the directory:
 
 ```bash
-git clone https://github.com/Catalyze-Software/multisig.git
-cd multisig
+git clone https://github.com/Catalyze-Software/group_wallet.git
+cd group_wallet
 ```
-
-## testing
-
-There is [seperate repository](https://github.com/Catalyze-Software/test-multisig) dedicated to testing the multisig wallet
 
 ## Usage Details
 

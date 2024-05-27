@@ -1,6 +1,6 @@
 use ic_cdk::{caller, query, update};
 
-use types::{Content, ProposalEntry, Status, VoteKind, VotesEntry};
+use types::{Content, ProposalEntry, ProposalResponse, Status, VoteKind, VotesEntry};
 
 use crate::{
     helpers::guards::{is_authorized, is_owner, is_whitelisted},
@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[query(guard = "is_authorized")]
-pub fn get_proposals(status: Option<Status>) -> Vec<ProposalEntry> {
+pub fn get_proposals(status: Option<Status>) -> Vec<ProposalResponse> {
     ProposalLogic::get_proposals(status)
 }
 

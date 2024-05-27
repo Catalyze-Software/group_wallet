@@ -41,6 +41,11 @@ type Proposal = record {
   created_at : nat64;
   sent_at : opt nat64;
 };
+type ProposalResponse = record {
+  id : nat64;
+  votes : vec Vote;
+  proposal : Proposal;
+};
 type Result = variant { Ok : record { nat64; principal }; Err : Error };
 type Result_1 = variant { Ok : vec AirdropTransfer; Err : Error };
 type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
@@ -67,12 +72,13 @@ service : (principal, vec principal) -> {
   add_whitelisted : (principal) -> (Result);
   get_airdrop_transfers : (nat64) -> (Result_1) query;
   get_owner : () -> (Result) query;
-  get_proposals : (opt Status) -> (vec record { nat64; Proposal }) query;
+  get_proposals : (opt Status) -> (vec ProposalResponse) query;
   get_time_out : () -> (nat64) query;
   get_votes : (nat64, opt VoteKind) -> (Result_2) query;
   get_whitelist : () -> (vec principal) query;
   propose : (Content) -> (Result_3);
-  remote_whitelisted : (principal) -> (Result_4);
+  remove_whitelisted : (principal) -> (Result_4);
+  switch_whitelisted : (principal, principal) -> (Result_4);
   transfer_ownership : (principal) -> (Result);
   vote_proposal : (nat64, VoteKind) -> (Result_3);
 }

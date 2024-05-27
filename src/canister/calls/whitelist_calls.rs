@@ -24,8 +24,13 @@ pub fn add_whitelisted(principal: Principal) -> CanisterResult<WhitelistEntry> {
 }
 
 #[update(guard = "is_owner")]
-pub fn remote_whitelisted(principal: Principal) -> CanisterResult<()> {
+pub fn remove_whitelisted(principal: Principal) -> CanisterResult<()> {
     WhitelistLogic::remove(principal)
+}
+
+#[update(guard = "is_owner")]
+pub fn switch_whitelisted(from: Principal, to: Principal) -> CanisterResult<()> {
+    WhitelistLogic::switch_whitelisted(from, to)
 }
 
 #[update(guard = "is_owner")]

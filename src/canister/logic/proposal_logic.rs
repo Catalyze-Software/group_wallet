@@ -4,7 +4,8 @@ use candid::Principal;
 use ic_cdk::api::time;
 use ic_cdk_timers::set_timer;
 use types::{
-    Content, Error, Proposal, ProposalEntry, Status, TallyResult, Vote, VoteKind, Votes, VotesEntry,
+    Content, Error, Proposal, ProposalEntry, ProposalResponse, Status, TallyResult, Vote, VoteKind,
+    Votes, VotesEntry,
 };
 
 use crate::{
@@ -20,7 +21,7 @@ use super::{AirdropLogic, TransferLogic, DAY_IN_NANOS};
 pub struct ProposalLogic;
 
 impl ProposalLogic {
-    pub fn get_proposals(status: Option<Status>) -> Vec<ProposalEntry> {
+    pub fn get_proposals(status: Option<Status>) -> Vec<ProposalResponse> {
         ProposalStorage::get_by_status(status)
     }
 
