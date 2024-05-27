@@ -38,14 +38,14 @@ type Proposal = record {
   status : Status;
   creator : principal;
   content : Content;
-  votes : Votes;
   created_at : nat64;
   sent_at : opt nat64;
 };
 type Result = variant { Ok : record { nat64; principal }; Err : Error };
 type Result_1 = variant { Ok : vec AirdropTransfer; Err : Error };
-type Result_2 = variant { Ok : record { nat64; Proposal }; Err : Error };
-type Result_3 = variant { Ok; Err : Error };
+type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
+type Result_3 = variant { Ok : record { nat64; Proposal }; Err : Error };
+type Result_4 = variant { Ok; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type TransferArg = record {
   to : Account;
@@ -60,16 +60,19 @@ type TransferProposalContent = record {
   canister_id : principal;
 };
 type ValidationResponse = record { field : text; message : text };
-type Vote = variant { Approve; Reject };
-type Votes = record { rejections : vec principal; approvals : vec principal };
-service : (principal) -> {
+type Vote = record { voter : principal; kind : VoteKind; created_at : nat64 };
+type VoteKind = variant { Approve; Reject };
+service : (principal, vec principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   add_whitelisted : (principal) -> (Result);
   get_airdrop_transfers : (nat64) -> (Result_1) query;
+  get_owner : () -> (Result) query;
   get_proposals : (opt Status) -> (vec record { nat64; Proposal }) query;
   get_time_out : () -> (nat64) query;
+  get_votes : (nat64, opt VoteKind) -> (Result_2) query;
   get_whitelist : () -> (vec principal) query;
-  propose : (Content) -> (Result_2);
-  remote_whitelisted : (principal) -> (Result_3);
-  vote_proposal : (nat64, Vote) -> (Result_2);
+  propose : (Content) -> (Result_3);
+  remote_whitelisted : (principal) -> (Result_4);
+  transfer_ownership : (principal) -> (Result);
+  vote_proposal : (nat64, VoteKind) -> (Result_3);
 }
