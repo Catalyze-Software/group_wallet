@@ -1,4 +1,4 @@
-use crate::impl_storable_for;
+use crate::{impl_storable_for, Votes};
 use candid::{CandidType, Principal};
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 use serde::Deserialize;
@@ -64,4 +64,11 @@ pub enum Status {
     Rejected,
     Expired,
     Deadlock,
+}
+
+#[derive(CandidType, Deserialize, PartialEq, Eq, Clone)]
+pub struct ProposalResponse {
+    pub id: u64,
+    pub proposal: Proposal,
+    pub votes: Votes,
 }

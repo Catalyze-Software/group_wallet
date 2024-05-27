@@ -23,6 +23,7 @@ fn get_time_out() -> u64 {
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
     use crate::result::CanisterResult;
+    use types::ProposalResponse;
     use types::{
         AirdropTransfers, Content, ProposalEntry, Status, VoteKind, VotesEntry, WhitelistEntry,
     };
@@ -41,5 +42,5 @@ pub fn candid() {
 
     let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let dir = dir.parent().unwrap().join("../candid");
-    write(dir.join("multisig.did"), __export_did_tmp_()).expect("Write failed.");
+    write(dir.join("group_wallet.did"), __export_did_tmp_()).expect("Write failed.");
 }

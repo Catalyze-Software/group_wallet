@@ -1,11 +1,11 @@
 use ic_stable_structures::memory_manager::MemoryId;
-use types::{Proposal, ProposalEntry, Status};
+use types::{Proposal, ProposalEntry, ProposalResponse, Status, Votes};
 
 use crate::result::CanisterResult;
 
 use super::{
-    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, PROPOSALS,
-    PROPOSALS_MEMORY_ID,
+    StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, VoteStorage,
+    PROPOSALS, PROPOSALS_MEMORY_ID,
 };
 
 pub struct ProposalStorage;
@@ -66,7 +66,7 @@ impl ProposalStorage {
         Self::update(id, proposal)
     }
 
-    pub fn get_by_status(status: Option<Status>) -> Vec<ProposalEntry> {
+    pub fn get_by_status(status: Option<Status>) -> Vec<ProposalResponse> {
         let mut proposals = Self::filter(|_, proposal| {
             if let Some(status) = status.clone() {
                 return proposal.status() == status;
@@ -76,6 +76,18 @@ impl ProposalStorage {
         });
 
         proposals.sort_by(|(_, a), (_, b)| a.created_at.cmp(&b.created_at));
-        proposals
+        proposals.into_iter().map(Self::map_to_response).collect()
+    }
+
+    fn map_to_response(data: (u64, Proposal)) -> ProposalResponse {
+        let (id, proposal) = data;
+        let votes: Votes = VoteStorage::get(id)
+            .map(|(_, votes)| votes)
+            .unwrap_or_else(|_| Votes(vec![]));
+        ProposalResponse {
+            id,
+            proposal,
+            votes,
+        }
     }
 }
