@@ -90,7 +90,7 @@ impl WhitelistLogic {
         Ok(())
     }
 
-    pub fn switch_whitelisted(remove: Principal, add: Principal) -> CanisterResult<()> {
+    pub fn switch_whitelisted(remove: Principal, add: Principal) -> CanisterResult<WhitelistEntry> {
         if [remove, add].contains(&Principal::anonymous()) {
             return Err(Error::bad_request().add_message("Cannot switch anonymous principal"));
         }
@@ -110,7 +110,6 @@ impl WhitelistLogic {
         let (id, _) = WhitelistStorage::find(|_, value| value == &remove)
             .ok_or(Error::not_found().add_message("Principal does not exist in whitelist"))?;
 
-        let _ = WhitelistStorage::update(id, add);
-        Ok(())
+        WhitelistStorage::update(id, add)
     }
 }

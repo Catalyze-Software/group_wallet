@@ -29,7 +29,7 @@ pub fn remove_whitelisted(principal: Principal) -> CanisterResult<()> {
 }
 
 #[update(guard = "is_owner")]
-pub fn switch_whitelisted(from: Principal, to: Principal) -> CanisterResult<()> {
+pub fn switch_whitelisted(from: Principal, to: Principal) -> CanisterResult<WhitelistEntry> {
     WhitelistLogic::switch_whitelisted(from, to)
 }
 
