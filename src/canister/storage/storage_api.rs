@@ -192,6 +192,13 @@ pub trait StorageUpdateable<
         })
     }
 
+    fn upsert(key: K, value: V) -> Result<(K, V), Error> {
+        Self::storage().with(|data| {
+            data.borrow_mut().insert(key.clone(), value.clone());
+            Ok((key, value))
+        })
+    }
+
     /// Remove a single entity by key
     /// # Arguments
     /// * `key` - The key of the entity to remove

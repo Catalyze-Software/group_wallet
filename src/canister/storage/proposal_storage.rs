@@ -1,11 +1,7 @@
-use std::time::Duration;
-
-use candid::Principal;
-use ic_cdk_timers::set_timer;
 use ic_stable_structures::memory_manager::MemoryId;
-use types::{Error, Proposal, ProposalEntry, Status, Vote};
+use types::{Proposal, ProposalEntry, Status};
 
-use crate::{logic::DAY_IN_NANOS, result::CanisterResult};
+use crate::result::CanisterResult;
 
 use super::{
     StaticStorageRef, Storage, StorageInsertable, StorageQueryable, StorageUpdateable, PROPOSALS,
@@ -31,38 +27,6 @@ impl StorageInsertable<Proposal> for ProposalStorage {}
 impl StorageUpdateable<u64, Proposal> for ProposalStorage {}
 
 impl ProposalStorage {
-    pub fn new_proposal(caller: Principal, proposal: Proposal) -> CanisterResult<ProposalEntry> {
-        let mut prop = proposal;
-        prop.add_vote(caller, Vote::Approve);
-
-        let (id, req) = Self::insert(prop)?;
-
-        set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
-            Self::expire(id);
-        });
-
-        Ok((id, req))
-    }
-
-    pub fn vote_proposal(caller: Principal, id: u64, vote: Vote) -> CanisterResult<ProposalEntry> {
-        let (id, mut req) = Self::get(id)?;
-
-        if req.status != Status::Pending {
-            return Err(Error::bad_request().add_message("Proposal is not pending"));
-        }
-
-        if req.votes.approvals.contains(&caller) {
-            return Err(Error::bad_request().add_message("Approval vote already cast"));
-        }
-
-        if req.votes.rejections.contains(&caller) {
-            return Err(Error::bad_request().add_message("Rejection vote already cast"));
-        }
-
-        req.add_vote(caller, vote);
-        Self::update(id, req.clone())
-    }
-
     pub fn expire(id: u64) {
         let proposal = Self::get_opt(id);
         if proposal.is_none() {

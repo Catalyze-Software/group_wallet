@@ -28,6 +28,10 @@ impl StorageInsertable<Principal> for WhitelistStorage {}
 impl StorageUpdateable<u64, Principal> for WhitelistStorage {}
 
 impl WhitelistStorage {
+    pub fn set_owner(owner: Principal) -> CanisterResult<WhitelistEntry> {
+        WhitelistStorage::upsert(WHITELIST_OWNER_INDEX, owner)
+    }
+
     pub fn get_owner() -> CanisterResult<WhitelistEntry> {
         WhitelistStorage::get(WHITELIST_OWNER_INDEX)
     }

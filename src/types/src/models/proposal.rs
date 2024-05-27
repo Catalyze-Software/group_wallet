@@ -3,14 +3,11 @@ use candid::{CandidType, Principal};
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 use serde::Deserialize;
 
-use super::{votes::Votes, Vote};
-
 impl_storable_for!(Proposal);
 
 #[derive(CandidType, Deserialize, Clone, PartialEq, Eq)]
 pub struct Proposal {
     pub status: Status,
-    pub votes: Votes,
     pub creator: Principal,
     pub sent_at: Option<u64>,
     pub created_at: u64,
@@ -39,7 +36,6 @@ impl Proposal {
     pub fn new(creator: Principal, content: Content) -> Self {
         Self {
             status: Status::Pending,
-            votes: Votes::default(),
             creator,
             sent_at: None,
             created_at: ic_cdk::api::time(),
@@ -48,25 +44,6 @@ impl Proposal {
     }
     pub fn status(&self) -> Status {
         self.status.clone()
-    }
-
-    pub fn add_vote(&mut self, caller: Principal, vote: Vote) {
-        match vote {
-            Vote::Approve => self.add_approve_vote(caller),
-            Vote::Reject => self.add_reject_vote(caller),
-        }
-    }
-
-    pub fn add_approve_vote(&mut self, caller: Principal) {
-        if !self.votes.approvals.contains(&caller) && !self.votes.rejections.contains(&caller) {
-            self.votes.approvals.push(caller);
-        }
-    }
-
-    pub fn add_reject_vote(&mut self, caller: Principal) {
-        if !self.votes.approvals.contains(&caller) && !self.votes.rejections.contains(&caller) {
-            self.votes.rejections.push(caller);
-        }
     }
 
     pub fn update_status(&mut self, status: Status) {

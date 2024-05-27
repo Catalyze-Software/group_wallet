@@ -1,6 +1,6 @@
 use candid::Principal;
 use ic_cdk::{init, query};
-use logic::DAY_IN_NANOS;
+use logic::{WhitelistLogic, DAY_IN_NANOS};
 
 pub mod helpers;
 pub mod logic;
@@ -10,9 +10,8 @@ pub mod storage;
 pub mod calls;
 
 #[init]
-pub fn init(_owner: Principal) {
-    // TODO: Fix
-    // Store::init(owner);
+pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
+    WhitelistLogic::init(owner, whitelisted)
 }
 
 #[query]
@@ -24,7 +23,9 @@ fn get_time_out() -> u64 {
 #[query(name = "__get_candid_interface_tmp_hack")]
 pub fn __export_did_tmp_() -> String {
     use crate::result::CanisterResult;
-    use types::{AirdropTransfers, Content, ProposalEntry, Status, Vote, WhitelistEntry};
+    use types::{
+        AirdropTransfers, Content, ProposalEntry, Status, VoteKind, VotesEntry, WhitelistEntry,
+    };
 
     use candid::export_service;
     export_service!();

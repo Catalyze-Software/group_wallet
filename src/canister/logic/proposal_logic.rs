@@ -1,13 +1,21 @@
+use std::time::Duration;
+
 use candid::Principal;
 use ic_cdk::api::time;
-use types::{Content, Error, Proposal, ProposalEntry, Status, TallyResult, Vote, Votes};
+use ic_cdk_timers::set_timer;
+use types::{
+    Content, Error, Proposal, ProposalEntry, Status, TallyResult, Vote, VoteKind, Votes, VotesEntry,
+};
 
 use crate::{
     result::CanisterResult,
-    storage::{ProposalStorage, StorageQueryable, WhitelistStorage},
+    storage::{
+        ProposalStorage, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable, VoteStorage, WhitelistStorage,
+    },
 };
 
-use super::{AirdropLogic, TransferLogic};
+use super::{AirdropLogic, TransferLogic, DAY_IN_NANOS};
 
 pub struct ProposalLogic;
 
@@ -16,21 +24,56 @@ impl ProposalLogic {
         ProposalStorage::get_by_status(status)
     }
 
+    pub fn get_votes(id: u64, kind: Option<VoteKind>) -> CanisterResult<VotesEntry> {
+        let (_, votes) = VoteStorage::get(id)?;
+
+        let votes = match kind {
+            Some(kind) => Votes(votes.0.iter().filter(|v| v.kind == kind).cloned().collect()),
+            None => votes,
+        };
+
+        Ok((id, votes))
+    }
+
     pub async fn propose(caller: Principal, content: Content) -> CanisterResult<ProposalEntry> {
         match content.clone() {
-            Content::Transfer(content) => TransferLogic::check_balance(caller, &content.args.amount).await?,
+            Content::Transfer(content) => {
+                TransferLogic::check_balance(caller, &content.args.amount).await?
+            }
             Content::Airdrop(content) => {
                 AirdropLogic::check_balance(content.canister_id, content.args).await?
             }
         }
 
-        ProposalStorage::new_proposal(caller, Proposal::new(caller, content))
+        let (id, proposal) = ProposalStorage::insert(Proposal::new(caller, content))?;
+
+        set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
+            ProposalStorage::expire(id);
+        });
+
+        VoteStorage::insert_by_key(id, Votes(vec![Vote::new(caller, VoteKind::Approve)]))?;
+
+        Ok((id, proposal))
     }
 
-    pub fn vote(caller: Principal, id: u64, vote: Vote) -> CanisterResult<ProposalEntry> {
-        let (id, proposal) = ProposalStorage::vote_proposal(caller, id, vote)?;
+    pub fn vote(caller: Principal, id: u64, vote: VoteKind) -> CanisterResult<ProposalEntry> {
+        let (id, proposal) = ProposalStorage::get(id)?;
 
-        match Self::get_tally_result(&proposal.votes) {
+        if proposal.status != Status::Pending {
+            return Err(Error::bad_request().add_message("Proposal is not pending"));
+        }
+
+        let (_, mut votes) = VoteStorage::get(id)?;
+
+        if votes.voted(&caller) {
+            return Err(Error::bad_request().add_message("Vote already cast"));
+        }
+
+        votes.add(Vote::new(caller, vote));
+
+        let (_, votes) = VoteStorage::update(id, votes)?;
+
+        match Self::get_tally_result(&votes) {
             TallyResult::Approve => ProposalStorage::approve(id),
             TallyResult::Reject => ProposalStorage::reject(id, false),
             TallyResult::Deadlock => ProposalStorage::reject(id, true),
@@ -60,8 +103,8 @@ impl ProposalLogic {
     fn get_tally_result(votes: &Votes) -> TallyResult {
         let whitelist = WhitelistStorage::get_all();
         let whitelist_count = whitelist.len() as f32;
-        let approval_count = votes.approvals.len() as f32;
-        let rejection_count = votes.rejections.len() as f32;
+        let approval_count = votes.approvals() as f32;
+        let rejection_count = votes.rejections() as f32;
 
         let approval_percentage = (approval_count / whitelist_count) * 100.0;
         let rejection_percentage = (rejection_count / whitelist_count) * 100.0;

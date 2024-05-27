@@ -1,4 +1,5 @@
 use candid::Principal;
+use ic_cdk::trap;
 use types::{Error, ValidateField, ValidationType, WhitelistEntry};
 
 use crate::{
@@ -12,11 +13,45 @@ use super::{MAX_WHITELISTED, MIN_WHITELISTED};
 pub struct WhitelistLogic;
 
 impl WhitelistLogic {
+    pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
+        let whitelisted = whitelisted
+            .into_iter()
+            .filter(|p| p != &owner)
+            .collect::<Vec<_>>();
+
+        let whitelisted_size = whitelisted.len() + 1;
+
+        if whitelisted_size > MIN_WHITELISTED {
+            trap(&format!(
+                "At least {MIN_WHITELISTED} principals must be whitelisted."
+            ));
+        }
+        if whitelisted_size > MAX_WHITELISTED {
+            trap(&format!(
+                "At most {MAX_WHITELISTED} principals can be whitelisted."
+            ));
+        }
+
+        WhitelistStorage::set_owner(owner).expect("Failed to set owner");
+
+        for principal in whitelisted {
+            WhitelistStorage::insert(principal).expect("Failed to insert principal");
+        }
+    }
+
     pub fn get_whitelist() -> Vec<Principal> {
         WhitelistStorage::get_all()
             .into_iter()
             .map(|(_, v)| v)
             .collect()
+    }
+
+    pub fn get_owner() -> CanisterResult<WhitelistEntry> {
+        WhitelistStorage::get_owner()
+    }
+
+    pub fn transfer_ownership(new_owner: Principal) -> CanisterResult<WhitelistEntry> {
+        WhitelistStorage::set_owner(new_owner)
     }
 
     pub fn add(principal: Principal) -> CanisterResult<WhitelistEntry> {
