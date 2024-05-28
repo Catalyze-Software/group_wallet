@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use candid::Principal;
-use ic_cdk::{api::time, id};
+use ic_cdk::api::time;
 use ic_cdk_timers::set_timer;
 use types::{
     Content, Error, Proposal, ProposalEntry, ProposalResponse, Status, TallyResult, Vote, VoteKind,
