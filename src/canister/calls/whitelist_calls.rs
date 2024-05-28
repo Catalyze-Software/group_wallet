@@ -34,6 +34,7 @@ pub fn switch_whitelisted(from: Principal, to: Principal) -> CanisterResult<Whit
 }
 
 #[update(guard = "is_owner")]
-pub fn transfer_ownership(new_owner: Principal) -> CanisterResult<WhitelistEntry> {
-    WhitelistLogic::transfer_ownership(new_owner)
+pub fn set_owner(new_owner: Principal) -> CanisterResult<Principal> {
+    WhitelistLogic::set_owner(new_owner)?;
+    Ok(ic_cdk::id())
 }

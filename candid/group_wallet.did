@@ -51,6 +51,7 @@ type Result_1 = variant { Ok : vec AirdropTransfer; Err : Error };
 type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
 type Result_3 = variant { Ok : record { nat64; Proposal }; Err : Error };
 type Result_4 = variant { Ok; Err : Error };
+type Result_5 = variant { Ok : principal; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type TransferArg = record {
   to : Account;
@@ -78,7 +79,7 @@ service : (principal, vec principal) -> {
   get_whitelist : () -> (vec principal) query;
   propose : (Content) -> (Result_3);
   remove_whitelisted : (principal) -> (Result_4);
+  set_owner : (principal) -> (Result_5);
   switch_whitelisted : (principal, principal) -> (Result);
-  transfer_ownership : (principal) -> (Result);
   vote_proposal : (nat64, VoteKind) -> (Result_3);
 }

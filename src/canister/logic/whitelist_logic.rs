@@ -50,8 +50,9 @@ impl WhitelistLogic {
         WhitelistStorage::get_owner()
     }
 
-    pub fn transfer_ownership(new_owner: Principal) -> CanisterResult<WhitelistEntry> {
-        WhitelistStorage::set_owner(new_owner)
+    pub fn set_owner(new_owner: Principal) -> CanisterResult<()> {
+        WhitelistStorage::set_owner(new_owner)?;
+        Ok(())
     }
 
     pub fn add(principal: Principal) -> CanisterResult<WhitelistEntry> {
