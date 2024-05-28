@@ -1,0 +1,23 @@
+[package]
+name = "group_wallet"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+candid = "0.10"
+ic-cdk = "0.14"
+serde = "1"
+ic-ledger-types = "0.11"
+ic-cdk-timers = "0.8"
+serde_bytes = "0.11"
+ic-stable-structures = "0.6"
+unicode-segmentation = "1"
+icrc-ledger-types = "0.1"
+
+types = { path = "../types"}

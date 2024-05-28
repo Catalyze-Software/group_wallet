@@ -1,0 +1,85 @@
+type Account = record { owner : principal; subaccount : opt blob };
+type AirdropProposalContent = record {
+  args : vec TransferArg;
+  canister_id : principal;
+};
+type AirdropTransfer = record {
+  status : Status;
+  canister_id : principal;
+  amount : nat;
+  receiver : principal;
+};
+type Content = variant {
+  Airdrop : AirdropProposalContent;
+  Transfer : TransferProposalContent;
+};
+type Error = record {
+  tag : opt text;
+  info : opt vec text;
+  method_name : opt text;
+  message : opt text;
+  timestamp : nat64;
+  error_type : ErrorKind;
+};
+type ErrorKind = variant {
+  Internal;
+  Duplicate;
+  SerializeError;
+  DeserializeError;
+  InsufficientBalance;
+  NotFound;
+  ValidationError : vec ValidationResponse;
+  Unsupported;
+  Unauthorized;
+  NotImplemented;
+  BadRequest;
+};
+type Proposal = record {
+  status : Status;
+  creator : principal;
+  content : Content;
+  created_at : nat64;
+  sent_at : opt nat64;
+};
+type ProposalResponse = record {
+  id : nat64;
+  votes : vec Vote;
+  proposal : Proposal;
+};
+type Result = variant { Ok : record { nat64; principal }; Err : Error };
+type Result_1 = variant { Ok : vec AirdropTransfer; Err : Error };
+type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
+type Result_3 = variant { Ok : record { nat64; Proposal }; Err : Error };
+type Result_4 = variant { Ok; Err : Error };
+type Result_5 = variant { Ok : principal; Err : Error };
+type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
+type TransferArg = record {
+  to : Account;
+  fee : opt nat;
+  memo : opt blob;
+  from_subaccount : opt blob;
+  created_at_time : opt nat64;
+  amount : nat;
+};
+type TransferProposalContent = record {
+  args : TransferArg;
+  canister_id : principal;
+};
+type ValidationResponse = record { field : text; message : text };
+type Vote = record { voter : principal; kind : VoteKind; created_at : nat64 };
+type VoteKind = variant { Approve; Reject };
+service : (principal, principal, vec principal) -> {
+  __get_candid_interface_tmp_hack : () -> (text) query;
+  add_whitelisted : (principal) -> (Result);
+  get_airdrop_transfers : (nat64) -> (Result_1) query;
+  get_owner : () -> (Result) query;
+  get_proposals : (opt Status) -> (vec ProposalResponse) query;
+  get_time_out : () -> (nat64) query;
+  get_votes : (nat64, opt VoteKind) -> (Result_2) query;
+  get_whitelist : () -> (vec principal) query;
+  propose : (Content) -> (Result_3);
+  remove_whitelisted : (principal) -> (Result_4);
+  set_owner : (principal) -> (Result_5);
+  switch_whitelisted : (principal, principal) -> (Result);
+  vote_proposal : (nat64, VoteKind) -> (Result_3);
+}

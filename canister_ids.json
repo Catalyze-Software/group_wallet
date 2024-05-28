@@ -1,6 +1,7 @@
 {
-  "multisig": {
+  "group_wallet": {
+    "ic": "onidn-byaaa-aaaap-ahhaq-cai",
     "development": "enwhn-aiaaa-aaaap-abdlq-cai",
-    "ic": "fcygz-gqaaa-aaaap-abpaa-cai"
+    "selami": "fcygz-gqaaa-aaaap-abpaa-cai"
   }
 }

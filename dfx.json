@@ -1,9 +1,14 @@
 {
   "canisters": {
-    "multisig": {
-      "candid": "candid/multisig.did",
-      "type": "rust",
-      "package": "multisig"
+    "group_wallet": {
+      "type": "custom",
+      "package": "group_wallet",
+      "candid": "candid/group_wallet.did",
+      "wasm": "wasm/group_wallet.wasm.gz",
+      "optimize": "O3",
+      "build": [
+        "bash scripts/build.sh"
+      ]
     }
   }
 }
