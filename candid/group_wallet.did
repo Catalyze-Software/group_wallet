@@ -68,7 +68,7 @@ type TransferProposalContent = record {
 type ValidationResponse = record { field : text; message : text };
 type Vote = record { voter : principal; kind : VoteKind; created_at : nat64 };
 type VoteKind = variant { Approve; Reject };
-service : (principal, vec principal) -> {
+service : (principal, principal, vec principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   add_whitelisted : (principal) -> (Result);
   get_airdrop_transfers : (nat64) -> (Result_1) query;

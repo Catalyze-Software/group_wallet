@@ -1,6 +1,7 @@
 use candid::Principal;
 use ic_cdk::{init, query};
 use logic::{WhitelistLogic, DAY_IN_NANOS};
+use storage::WALLET_INDEX;
 
 pub mod helpers;
 pub mod logic;
@@ -10,7 +11,8 @@ pub mod storage;
 pub mod calls;
 
 #[init]
-pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
+pub fn init(wallet_index: Principal, owner: Principal, whitelisted: Vec<Principal>) {
+    let _ = WALLET_INDEX.with(|w| w.borrow_mut().set(Some(wallet_index)));
     WhitelistLogic::init(owner, whitelisted)
 }
 
