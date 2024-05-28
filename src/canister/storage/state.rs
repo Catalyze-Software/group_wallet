@@ -19,13 +19,11 @@ pub static WALLET_INDEX_MEMORY_ID: MemoryId = MemoryId::new(0);
 
 pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static TRANSFER_REQUESTS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(2);
 
-pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(3);
+pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(3);
 
-pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(4);
-
-pub static VOTES_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static VOTES_MEMORY_ID: MemoryId = MemoryId::new(4);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
