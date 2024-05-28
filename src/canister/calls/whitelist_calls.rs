@@ -1,5 +1,5 @@
 use crate::{
-    helpers::guards::{is_authorized, is_owner},
+    helpers::guards::{is_authorized, is_owner, is_wallet_index},
     result::CanisterResult,
 };
 use candid::Principal;
@@ -33,7 +33,7 @@ pub fn switch_whitelisted(from: Principal, to: Principal) -> CanisterResult<Whit
     WhitelistLogic::switch_whitelisted(from, to)
 }
 
-#[update(guard = "is_owner")]
+#[update(guard = "is_wallet_index")]
 pub fn set_owner(new_owner: Principal) -> CanisterResult<Principal> {
     WhitelistLogic::set_owner(new_owner)?;
     Ok(ic_cdk::id())
