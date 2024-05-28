@@ -78,7 +78,7 @@ service : (principal, vec principal) -> {
   get_whitelist : () -> (vec principal) query;
   propose : (Content) -> (Result_3);
   remove_whitelisted : (principal) -> (Result_4);
-  switch_whitelisted : (principal, principal) -> (Result_4);
+  switch_whitelisted : (principal, principal) -> (Result);
   transfer_ownership : (principal) -> (Result);
   vote_proposal : (nat64, VoteKind) -> (Result_3);
 }

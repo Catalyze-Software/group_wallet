@@ -39,7 +39,7 @@ impl ProposalLogic {
     pub async fn propose(caller: Principal, content: Content) -> CanisterResult<ProposalEntry> {
         match content.clone() {
             Content::Transfer(content) => {
-                TransferLogic::check_balance(caller, &content.args.amount).await?
+                TransferLogic::check_balance(content.canister_id, &content.args.amount).await?
             }
             Content::Airdrop(content) => {
                 AirdropLogic::check_balance(content.canister_id, content.args).await?
