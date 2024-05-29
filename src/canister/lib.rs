@@ -1,7 +1,7 @@
 use candid::Principal;
 use ic_cdk::{caller, init, query};
 use logic::{WhitelistLogic, DAY_IN_NANOS};
-use storage::WALLET_INDEX;
+use storage::{CellStorage, WalletIndexStorage};
 
 pub mod helpers;
 pub mod logic;
@@ -12,7 +12,7 @@ pub mod calls;
 
 #[init]
 pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
-    let _ = WALLET_INDEX.with(|w| w.borrow_mut().set(Some(caller())));
+    WalletIndexStorage::set(caller()).expect("Failed to set wallet index");
     WhitelistLogic::init(owner, whitelisted)
 }
 
@@ -26,9 +26,7 @@ fn get_time_out() -> u64 {
 pub fn __export_did_tmp_() -> String {
     use crate::result::CanisterResult;
     use types::ProposalResponse;
-    use types::{
-        AirdropTransfers, Content, ProposalEntry, Status, VoteKind, VotesEntry, WhitelistEntry,
-    };
+    use types::{AirdropTransfers, Content, ProposalEntry, Status, VoteKind, VotesEntry};
 
     use candid::export_service;
     export_service!();

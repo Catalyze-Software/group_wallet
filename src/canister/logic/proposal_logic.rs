@@ -103,7 +103,8 @@ impl ProposalLogic {
 
     fn get_tally_result(votes: &Votes) -> TallyResult {
         let whitelist = WhitelistStorage::get_all();
-        let whitelist_count = whitelist.len() as f32;
+        // Plus one for the owner
+        let whitelist_count = (whitelist.len() + 1) as f32;
         let approval_count = votes.approvals() as f32;
         let rejection_count = votes.rejections() as f32;
 

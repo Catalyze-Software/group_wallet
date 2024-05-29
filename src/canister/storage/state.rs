@@ -15,15 +15,16 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// These IDs are used to identify the different stores in the `MemoryManager`.
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
-pub static WALLET_INDEX_MEMORY_ID: MemoryId = MemoryId::new(0);
+pub static OWNER_MEMORY_ID: MemoryId = MemoryId::new(0);
+pub static WALLET_INDEX_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(1);
+pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(2);
 
-pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(3);
 
-pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(3);
+pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(4);
 
-pub static VOTES_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static VOTES_MEMORY_ID: MemoryId = MemoryId::new(5);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -36,6 +37,11 @@ type MemoryManagerStorage = RefCell<MemoryManager<DefaultMemoryImpl>>;
 thread_local! {
     pub static MEMORY_MANAGER: MemoryManagerStorage =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
+
+    pub static OWNER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(OWNER_MEMORY_ID)), None)
+            .expect("Failed to initialize owner")
+    );
 
     pub static WALLET_INDEX: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(WALLET_INDEX_MEMORY_ID)), None)

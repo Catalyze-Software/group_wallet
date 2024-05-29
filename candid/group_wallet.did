@@ -46,13 +46,12 @@ type ProposalResponse = record {
   votes : vec Vote;
   proposal : Proposal;
 };
-type Result = variant { Ok : record { nat64; principal }; Err : Error };
+type Result = variant { Ok : principal; Err : Error };
 type Result_1 = variant { Ok; Err : Error };
 type Result_2 = variant { Ok : vec AirdropTransfer; Err : Error };
 type Result_3 = variant { Ok : record { nat64; vec Vote }; Err : Error };
-type Result_4 = variant { Ok : record { nat64; Proposal }; Err : Error };
-type Result_5 = variant { Ok : vec record { nat64; principal }; Err : Error };
-type Result_6 = variant { Ok : principal; Err : Error };
+type Result_4 = variant { Ok : vec principal; Err : Error };
+type Result_5 = variant { Ok : record { nat64; Proposal }; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type TransferArg = record {
   to : Account;
@@ -78,10 +77,10 @@ service : (principal, vec principal) -> {
   get_proposals : (opt Status) -> (vec ProposalResponse) query;
   get_time_out : () -> (nat64) query;
   get_votes : (nat64, opt VoteKind) -> (Result_3) query;
-  get_whitelist : () -> (vec principal) query;
-  propose : (Content) -> (Result_4);
+  get_whitelist : () -> (Result_4) query;
+  propose : (Content) -> (Result_5);
   remove_whitelisted : (principal) -> (Result_1);
-  replace_whitelisted : (vec principal) -> (Result_5);
-  set_owner : (principal) -> (Result_6);
-  vote_proposal : (nat64, VoteKind) -> (Result_4);
+  replace_whitelisted : (vec principal) -> (Result_4);
+  set_owner : (principal) -> (Result);
+  vote_proposal : (nat64, VoteKind) -> (Result_5);
 }
