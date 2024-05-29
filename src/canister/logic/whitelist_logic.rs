@@ -105,6 +105,11 @@ impl WhitelistLogic {
                 .add_message(&format!("Cannot replace owner principal: {owner}")));
         }
 
-        WhitelistStorage::replace(whitelisted)
+        let whitelisted = WhitelistStorage::replace(whitelisted)?;
+        let whitelisted = vec![OwnerStorage::get()?]
+            .into_iter()
+            .chain(whitelisted)
+            .collect();
+        Ok(whitelisted)
     }
 }
