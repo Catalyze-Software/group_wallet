@@ -1,17 +1,11 @@
 use candid::{Nat, Principal};
 use icrc_ledger_types::icrc1::transfer::TransferArg;
 
-use types::{
-    AirdropProposalContent, AirdropTransfer, AirdropTransfers,
-    Status,
-};
+use types::{AirdropProposalContent, AirdropTransfer, AirdropTransfers, Status};
 
 use crate::{
     result::CanisterResult,
-    storage::{
-         AirdropTransferStorage, StorageInsertableByKey,
-        StorageQueryable,
-    },
+    storage::{AirdropTransferStorage, StorageInsertableByKey, StorageQueryable},
 };
 
 use super::transfer_logic::TransferLogic;
