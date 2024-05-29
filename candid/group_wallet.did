@@ -47,11 +47,12 @@ type ProposalResponse = record {
   proposal : Proposal;
 };
 type Result = variant { Ok : record { nat64; principal }; Err : Error };
-type Result_1 = variant { Ok : vec AirdropTransfer; Err : Error };
-type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
-type Result_3 = variant { Ok : record { nat64; Proposal }; Err : Error };
-type Result_4 = variant { Ok; Err : Error };
-type Result_5 = variant { Ok : principal; Err : Error };
+type Result_1 = variant { Ok; Err : Error };
+type Result_2 = variant { Ok : vec AirdropTransfer; Err : Error };
+type Result_3 = variant { Ok : record { nat64; vec Vote }; Err : Error };
+type Result_4 = variant { Ok : record { nat64; Proposal }; Err : Error };
+type Result_5 = variant { Ok : vec record { nat64; principal }; Err : Error };
+type Result_6 = variant { Ok : principal; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type TransferArg = record {
   to : Account;
@@ -71,15 +72,16 @@ type VoteKind = variant { Approve; Reject };
 service : (principal, principal, vec principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
   add_whitelisted : (principal) -> (Result);
-  get_airdrop_transfers : (nat64) -> (Result_1) query;
+  execute_proposal : (nat64) -> (Result_1);
+  get_airdrop_transfers : (nat64) -> (Result_2) query;
   get_owner : () -> (Result) query;
   get_proposals : (opt Status) -> (vec ProposalResponse) query;
   get_time_out : () -> (nat64) query;
-  get_votes : (nat64, opt VoteKind) -> (Result_2) query;
+  get_votes : (nat64, opt VoteKind) -> (Result_3) query;
   get_whitelist : () -> (vec principal) query;
-  propose : (Content) -> (Result_3);
-  remove_whitelisted : (principal) -> (Result_4);
-  set_owner : (principal) -> (Result_5);
-  switch_whitelisted : (principal, principal) -> (Result);
-  vote_proposal : (nat64, VoteKind) -> (Result_3);
+  propose : (Content) -> (Result_4);
+  remove_whitelisted : (principal) -> (Result_1);
+  replace_whitelisted : (vec principal) -> (Result_5);
+  set_owner : (principal) -> (Result_6);
+  vote_proposal : (nat64, VoteKind) -> (Result_4);
 }
