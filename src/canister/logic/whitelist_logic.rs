@@ -14,11 +14,13 @@ pub struct WhitelistLogic;
 
 impl WhitelistLogic {
     pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
+        // Filter out the owner from the whitelisted to ensure amount is correct
         let whitelisted = whitelisted
             .into_iter()
             .filter(|p| p != &owner)
             .collect::<Vec<_>>();
 
+        // Plus one for the owner
         let whitelisted_size = whitelisted.len() + 1;
 
         if whitelisted_size < MIN_WHITELISTED {
@@ -46,13 +48,20 @@ impl WhitelistLogic {
     }
 
     pub fn add(principal: Principal) -> CanisterResult<Principal> {
+        if principal == Principal::anonymous() {
+            return Err(Error::bad_request().add_message("Cannot add anonymous principal"));
+        }
+        if principal == OwnerStorage::get()? {
+            return Err(Error::bad_request().add_message("Cannot add owner principal"));
+        }
         if WhitelistStorage::contains(&principal) {
             return Err(Error::bad_request().add_message("Principal already exists in whitelist"));
         }
 
         Validator::new(vec![ValidateField(
             ValidationType::Count(
-                WhitelistStorage::get_all().len(),
+                // Plus one for the owner
+                WhitelistStorage::get_all().len() + 1,
                 MIN_WHITELISTED,
                 MAX_WHITELISTED,
             ),
@@ -69,7 +78,8 @@ impl WhitelistLogic {
 
         Validator::new(vec![ValidateField(
             ValidationType::Count(
-                WhitelistStorage::get_all().len() - 1,
+                // whitelist_size + 1 for the owner - 1 for the removed principal == whitelist_size
+                WhitelistStorage::get_all().len(),
                 MIN_WHITELISTED,
                 MAX_WHITELISTED,
             ),
