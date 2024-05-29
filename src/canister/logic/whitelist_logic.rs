@@ -14,6 +14,14 @@ pub struct WhitelistLogic;
 
 impl WhitelistLogic {
     pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
+        let mut deduped = whitelisted.clone();
+        deduped.sort();
+        deduped.dedup();
+
+        if whitelisted.len() != deduped.len() {
+            trap("Duplicate principals in whitelist");
+        }
+
         // Filter out the owner from the whitelisted to ensure amount is correct
         let whitelisted = whitelisted
             .into_iter()
@@ -92,6 +100,14 @@ impl WhitelistLogic {
     }
 
     pub fn replace_whitelisted(whitelisted: Vec<Principal>) -> CanisterResult<Vec<Principal>> {
+        let mut deduped = whitelisted.clone();
+        deduped.sort();
+        deduped.dedup();
+
+        if whitelisted.len() != deduped.len() {
+            return Err(Error::bad_request().add_message("Duplicate principals in whitelist"));
+        }
+
         Validator::new(vec![ValidateField(
             ValidationType::Count(
                 whitelisted.len(),
