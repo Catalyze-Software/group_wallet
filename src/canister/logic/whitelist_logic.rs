@@ -1,24 +1,34 @@
 use candid::Principal;
 use ic_cdk::trap;
-use types::{Error, ValidateField, ValidationType, WhitelistEntry};
+use types::{Error, ValidateField, ValidationType};
 
 use crate::{
     helpers::validator::Validator,
     result::CanisterResult,
-    storage::{StorageInsertable, StorageQueryable, StorageUpdateable, WhitelistStorage},
+    storage::{CellStorage, OwnerStorage, StorageInsertable, StorageQueryable, WhitelistStorage},
 };
 
-use super::{MAX_WHITELISTED, MIN_WHITELISTED, WHITELIST_OWNER_INDEX};
+use super::{MAX_WHITELISTED, MIN_WHITELISTED};
 
 pub struct WhitelistLogic;
 
 impl WhitelistLogic {
     pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
+        let mut deduped = whitelisted.clone();
+        deduped.sort();
+        deduped.dedup();
+
+        if whitelisted.len() != deduped.len() {
+            trap("Duplicate principals in whitelist");
+        }
+
+        // Filter out the owner from the whitelisted to ensure amount is correct
         let whitelisted = whitelisted
             .into_iter()
             .filter(|p| p != &owner)
             .collect::<Vec<_>>();
 
+        // Plus one for the owner
         let whitelisted_size = whitelisted.len() + 1;
 
         if whitelisted_size < MIN_WHITELISTED {
@@ -32,37 +42,34 @@ impl WhitelistLogic {
             ));
         }
 
-        WhitelistStorage::set_owner(owner).expect("Failed to set owner");
+        OwnerStorage::set(owner).expect("Failed to set owner");
 
         for principal in whitelisted {
             WhitelistStorage::insert(principal).expect("Failed to insert principal");
         }
     }
 
-    pub fn get_whitelist() -> Vec<Principal> {
-        WhitelistStorage::get_all()
-            .into_iter()
-            .map(|(_, v)| v)
-            .collect()
+    pub fn get_whitelist() -> CanisterResult<Vec<Principal>> {
+        let result = vec![OwnerStorage::get()?];
+        let whitelisted = WhitelistStorage::get_all().into_iter().map(|(_, v)| v);
+        Ok(result.into_iter().chain(whitelisted).collect())
     }
 
-    pub fn get_owner() -> CanisterResult<WhitelistEntry> {
-        WhitelistStorage::get_owner()
-    }
-
-    pub fn set_owner(new_owner: Principal) -> CanisterResult<()> {
-        WhitelistStorage::set_owner(new_owner)?;
-        Ok(())
-    }
-
-    pub fn add(principal: Principal) -> CanisterResult<WhitelistEntry> {
+    pub fn add(principal: Principal) -> CanisterResult<Principal> {
+        if principal == Principal::anonymous() {
+            return Err(Error::bad_request().add_message("Cannot add anonymous principal"));
+        }
+        if principal == OwnerStorage::get()? {
+            return Err(Error::bad_request().add_message("Cannot add owner principal"));
+        }
         if WhitelistStorage::contains(&principal) {
             return Err(Error::bad_request().add_message("Principal already exists in whitelist"));
         }
 
         Validator::new(vec![ValidateField(
             ValidationType::Count(
-                WhitelistStorage::get_all().len(),
+                // Plus one for the owner
+                WhitelistStorage::get_all().len() + 1,
                 MIN_WHITELISTED,
                 MAX_WHITELISTED,
             ),
@@ -70,7 +77,7 @@ impl WhitelistLogic {
         )])
         .validate()?;
 
-        WhitelistStorage::insert(principal)
+        WhitelistStorage::insert(principal).map(|(_, v)| v)
     }
 
     pub fn remove(principal: Principal) -> CanisterResult<()> {
@@ -79,7 +86,8 @@ impl WhitelistLogic {
 
         Validator::new(vec![ValidateField(
             ValidationType::Count(
-                WhitelistStorage::get_all().len() - 1,
+                // whitelist_size + 1 for the owner - 1 for the removed principal == whitelist_size
+                WhitelistStorage::get_all().len(),
                 MIN_WHITELISTED,
                 MAX_WHITELISTED,
             ),
@@ -91,7 +99,15 @@ impl WhitelistLogic {
         Ok(())
     }
 
-    pub fn replace_whitelisted(whitelisted: Vec<Principal>) -> CanisterResult<Vec<WhitelistEntry>> {
+    pub fn replace_whitelisted(whitelisted: Vec<Principal>) -> CanisterResult<Vec<Principal>> {
+        let mut deduped = whitelisted.clone();
+        deduped.sort();
+        deduped.dedup();
+
+        if whitelisted.len() != deduped.len() {
+            return Err(Error::bad_request().add_message("Duplicate principals in whitelist"));
+        }
+
         Validator::new(vec![ValidateField(
             ValidationType::Count(
                 whitelisted.len(),
@@ -107,7 +123,7 @@ impl WhitelistLogic {
             return Err(Error::bad_request().add_message("Cannot replace with anonymous principal"));
         }
 
-        let (_, owner) = WhitelistStorage::get_owner()?;
+        let owner = OwnerStorage::get()?;
         let owner = whitelisted.clone().into_iter().find(|p| p == &owner);
 
         if let Some(owner) = owner {
@@ -115,25 +131,11 @@ impl WhitelistLogic {
                 .add_message(&format!("Cannot replace owner principal: {owner}")));
         }
 
-        whitelisted.clone().into_iter().try_for_each(|p| {
-            if WhitelistStorage::contains(&p) {
-                return Err(Error::bad_request()
-                    .add_message(&format!("Principal: {p} already exists in whitelist")));
-            }
-
-            Ok(())
-        })?;
-
-        whitelisted
+        let whitelisted = WhitelistStorage::replace(whitelisted)?;
+        let whitelisted = vec![OwnerStorage::get()?]
             .into_iter()
-            .enumerate()
-            .try_for_each(|(idx, p)| {
-                // Storage starts from 1, owner is at index 1
-                let id = WHITELIST_OWNER_INDEX + idx as u64 + 1;
-                WhitelistStorage::update(id, p)?;
-                Ok(())
-            })?;
-
-        Ok(WhitelistStorage::get_all())
+            .chain(whitelisted)
+            .collect();
+        Ok(whitelisted)
     }
 }

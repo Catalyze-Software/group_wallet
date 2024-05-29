@@ -3,7 +3,7 @@ use ic_cdk::caller;
 
 use types::Error;
 
-use crate::storage::{StorageQueryable, WhitelistStorage, WALLET_INDEX};
+use crate::storage::{CellStorage, OwnerStorage, StorageQueryable, WhitelistStorage, WALLET_INDEX};
 
 pub fn is_authorized() -> Result<(), String> {
     if caller() != Principal::anonymous() {
@@ -22,6 +22,10 @@ pub fn is_whitelisted() -> Result<(), String> {
         return Ok(());
     }
 
+    if caller() == OwnerStorage::get().map_err(|_| "Failed to get owner")? {
+        return Ok(());
+    }
+
     Err(Error::unauthorized()
         .add_message("Principal is not whitelisted")
         .to_string())
@@ -31,7 +35,7 @@ pub fn is_owner() -> Result<(), String> {
     is_authorized()?;
     is_whitelisted()?;
 
-    let (_, owner) = WhitelistStorage::get_owner().map_err(|_| "Failed to get owner")?;
+    let owner = OwnerStorage::get().map_err(|_| "Failed to get owner")?;
     if caller() == owner {
         return Ok(());
     }
