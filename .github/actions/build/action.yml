@@ -18,7 +18,7 @@ inputs:
   package:
     description: Rust package name to build
     required: false
-    default: 'group_wallet'
+    default: 'canister'
   build_args:
     description: Arguments to pass to cargo build
     required: false

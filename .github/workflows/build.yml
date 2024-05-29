@@ -20,6 +20,7 @@ jobs:
       - name: Build
         uses: ./.github/actions/build
         with:
+          package: 'group_wallet'
           lint: 'true'
           # TODO: Enable tests once they are implemented
           test: 'false'
