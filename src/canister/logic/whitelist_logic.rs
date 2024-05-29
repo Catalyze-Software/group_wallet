@@ -103,15 +103,8 @@ impl WhitelistLogic {
         )])
         .validate()?;
 
-        let anonymous = whitelisted
-            .clone()
-            .into_iter()
-            .find(|p| p != &Principal::anonymous());
-
-        if let Some(anonymous) = anonymous {
-            return Err(Error::bad_request().add_message(&format!(
-                "Cannot replace with anonymous principal: {anonymous}"
-            )));
+        if whitelisted.clone().contains(&Principal::anonymous()) {
+            return Err(Error::bad_request().add_message("Cannot replace with anonymous principal"));
         }
 
         let (_, owner) = WhitelistStorage::get_owner()?;
