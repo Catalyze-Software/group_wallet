@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!master'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        uses: ./.github/actions/build
+        with:
+          package: 'group_wallet'
+          lint: 'true'
+          # TODO: Enable tests once they are implemented
+          test: 'false'
+          gzip: 'false'

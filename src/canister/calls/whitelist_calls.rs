@@ -29,8 +29,8 @@ pub fn remove_whitelisted(principal: Principal) -> CanisterResult<()> {
 }
 
 #[update(guard = "is_owner")]
-pub fn switch_whitelisted(from: Principal, to: Principal) -> CanisterResult<WhitelistEntry> {
-    WhitelistLogic::switch_whitelisted(from, to)
+pub fn replace_whitelisted(whitelisted: Vec<Principal>) -> CanisterResult<Vec<WhitelistEntry>> {
+    WhitelistLogic::replace_whitelisted(whitelisted)
 }
 
 #[update(guard = "is_wallet_index")]
