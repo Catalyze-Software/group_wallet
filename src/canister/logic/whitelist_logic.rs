@@ -8,7 +8,7 @@ use crate::{
     storage::{StorageInsertable, StorageQueryable, StorageUpdateable, WhitelistStorage},
 };
 
-use super::{MAX_WHITELISTED, MIN_WHITELISTED};
+use super::{MAX_WHITELISTED, MIN_WHITELISTED, WHITELIST_OWNER_INDEX};
 
 pub struct WhitelistLogic;
 
@@ -91,20 +91,56 @@ impl WhitelistLogic {
         Ok(())
     }
 
-    pub fn switch_whitelisted(remove: Principal, add: Principal) -> CanisterResult<WhitelistEntry> {
-        if [remove, add].contains(&Principal::anonymous()) {
-            return Err(Error::bad_request().add_message("Cannot switch anonymous principal"));
+    pub fn replace_whitelisted(whitelisted: Vec<Principal>) -> CanisterResult<Vec<WhitelistEntry>> {
+        Validator::new(vec![ValidateField(
+            ValidationType::Count(
+                whitelisted.len(),
+                1,
+                // Only whitelisted principals could be replaced, not the owner
+                MIN_WHITELISTED,
+            ),
+            "whitelisted".to_owned(),
+        )])
+        .validate()?;
+
+        let anonymous = whitelisted
+            .clone()
+            .into_iter()
+            .find(|p| p != &Principal::anonymous());
+
+        if let Some(anonymous) = anonymous {
+            return Err(Error::bad_request().add_message(&format!(
+                "Cannot replace with anonymous principal: {anonymous}"
+            )));
         }
 
-        let (id, _) = WhitelistStorage::find(|_, value| value == &remove)
-            .ok_or(Error::not_found().add_message("Principal does not exist in whitelist"))?;
+        let (_, owner) = WhitelistStorage::get_owner()?;
+        let owner = whitelisted.clone().into_iter().find(|p| p == &owner);
 
-        if WhitelistStorage::contains(&add) {
-            return Err(
-                Error::bad_request().add_message("Add principal already exists in whitelist")
-            );
+        if let Some(owner) = owner {
+            return Err(Error::bad_request()
+                .add_message(&format!("Cannot replace owner principal: {owner}")));
         }
 
-        WhitelistStorage::update(id, add)
+        whitelisted.clone().into_iter().try_for_each(|p| {
+            if WhitelistStorage::contains(&p) {
+                return Err(Error::bad_request()
+                    .add_message(&format!("Principal: {p} already exists in whitelist")));
+            }
+
+            Ok(())
+        })?;
+
+        whitelisted
+            .into_iter()
+            .enumerate()
+            .try_for_each(|(idx, p)| {
+                // Storage starts from 1, owner is at index 1
+                let id = WHITELIST_OWNER_INDEX + idx as u64 + 1;
+                WhitelistStorage::update(id, p)?;
+                Ok(())
+            })?;
+
+        Ok(WhitelistStorage::get_all())
     }
 }
