@@ -3,7 +3,9 @@ use ic_cdk::caller;
 
 use types::Error;
 
-use crate::storage::{CellStorage, OwnerStorage, StorageQueryable, WhitelistStorage, MULTISIG_INDEX};
+use crate::storage::{
+    CellStorage, OwnerStorage, StorageQueryable, WhitelistStorage, MULTISIG_INDEX,
+};
 
 pub fn is_authorized() -> Result<(), String> {
     if caller() != Principal::anonymous() {
