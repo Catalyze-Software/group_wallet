@@ -13,16 +13,6 @@ pub fn get_whitelist() -> CanisterResult<Vec<Principal>> {
 }
 
 #[update(guard = "is_owner")]
-pub fn add_whitelisted(principal: Principal) -> CanisterResult<Principal> {
-    WhitelistLogic::add(principal)
-}
-
-#[update(guard = "is_owner")]
-pub fn remove_whitelisted(principal: Principal) -> CanisterResult<()> {
-    WhitelistLogic::remove(principal)
-}
-
-#[update(guard = "is_owner")]
 pub fn replace_whitelisted(whitelisted: Vec<Principal>) -> CanisterResult<Vec<Principal>> {
     WhitelistLogic::replace_whitelisted(whitelisted)
 }

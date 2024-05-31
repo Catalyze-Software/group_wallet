@@ -3,7 +3,7 @@ use ic_cdk::caller;
 
 use types::Error;
 
-use crate::storage::{CellStorage, OwnerStorage, StorageQueryable, WhitelistStorage, WALLET_INDEX};
+use crate::storage::{CellStorage, OwnerStorage, StorageQueryable, WhitelistStorage, MULTISIG_INDEX};
 
 pub fn is_authorized() -> Result<(), String> {
     if caller() != Principal::anonymous() {
@@ -48,7 +48,7 @@ pub fn is_owner() -> Result<(), String> {
 pub fn is_wallet_index() -> Result<(), String> {
     is_authorized()?;
 
-    let wallet_index = WALLET_INDEX
+    let wallet_index = MULTISIG_INDEX
         .with(|w| {
             w.borrow()
                 .get()

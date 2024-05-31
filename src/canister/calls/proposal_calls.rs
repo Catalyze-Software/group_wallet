@@ -18,6 +18,16 @@ pub fn get_votes(id: u64, kind: Option<VoteKind>) -> CanisterResult<VotesEntry> 
     ProposalLogic::get_votes(id, kind)
 }
 
+#[query(guard = "is_authorized")]
+pub fn get_voting_period() -> CanisterResult<u64> {
+    ProposalLogic::get_voting_period()
+}
+
+#[query(guard = "is_owner")]
+pub fn set_voting_period(nanos_period: u64) -> CanisterResult<u64> {
+    ProposalLogic::set_voting_period(nanos_period)
+}
+
 #[update(guard = "is_owner")]
 pub async fn propose(content: Content) -> CanisterResult<ProposalEntry> {
     ProposalLogic::propose(caller(), content).await

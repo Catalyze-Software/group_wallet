@@ -11,12 +11,12 @@ use types::{
 use crate::{
     result::CanisterResult,
     storage::{
-        ProposalStorage, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-        StorageUpdateable, VoteStorage, WhitelistStorage,
+        CellStorage, ProposalStorage, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable, VoteStorage, VotingPeriodStorage, WhitelistStorage,
     },
 };
 
-use super::{AirdropLogic, TransferLogic, DAY_IN_NANOS};
+use super::{AirdropLogic, TransferLogic};
 
 pub struct ProposalLogic;
 
@@ -36,6 +36,15 @@ impl ProposalLogic {
         Ok((id, votes))
     }
 
+    pub fn get_voting_period() -> CanisterResult<u64> {
+        let nanos = VotingPeriodStorage::get()?;
+        Ok(Duration::from_nanos(nanos).as_secs())
+    }
+
+    pub fn set_voting_period(nanos_period: u64) -> CanisterResult<u64> {
+        VotingPeriodStorage::set(nanos_period)
+    }
+
     pub async fn propose(caller: Principal, content: Content) -> CanisterResult<ProposalEntry> {
         match content.clone() {
             Content::Transfer(content) => {
@@ -48,9 +57,12 @@ impl ProposalLogic {
 
         let (id, proposal) = ProposalStorage::insert(Proposal::new(caller, content))?;
 
-        set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
-            ProposalStorage::expire(id);
-        });
+        set_timer(
+            Duration::from_nanos(VotingPeriodStorage::get()?),
+            move || {
+                ProposalStorage::expire(id);
+            },
+        );
 
         VoteStorage::insert_by_key(id, Votes(vec![Vote::new(caller, VoteKind::Approve)]))?;
 
