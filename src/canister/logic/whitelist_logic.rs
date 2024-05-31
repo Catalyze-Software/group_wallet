@@ -67,9 +67,9 @@ impl WhitelistLogic {
         Validator::new(vec![ValidateField(
             ValidationType::Count(
                 whitelisted.len(),
-                1,
                 // Only whitelisted principals could be replaced, not the owner
-                MIN_WHITELISTED,
+                MIN_WHITELISTED - 1,
+                MAX_WHITELISTED - 1,
             ),
             "whitelisted".to_owned(),
         )])
