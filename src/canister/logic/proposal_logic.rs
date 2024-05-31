@@ -78,11 +78,10 @@ impl ProposalLogic {
 
         let (_, mut votes) = VoteStorage::get(id)?;
 
-        if votes.voted(&caller) {
-            return Err(Error::bad_request().add_message("Vote already cast"));
+        match votes.voted(&caller) {
+            true => votes.update(caller, vote),
+            false => votes.add(Vote::new(caller, vote)),
         }
-
-        votes.add(Vote::new(caller, vote));
 
         let (_, votes) = VoteStorage::update(id, votes)?;
 
