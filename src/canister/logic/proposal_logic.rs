@@ -11,12 +11,12 @@ use types::{
 use crate::{
     result::CanisterResult,
     storage::{
-        CellStorage, ProposalStorage, StorageInsertable, StorageInsertableByKey, StorageQueryable,
-        StorageUpdateable, VoteStorage, VotingPeriodStorage, WhitelistStorage,
+        ProposalStorage, StorageInsertable, StorageInsertableByKey, StorageQueryable,
+        StorageUpdateable, VoteStorage, WhitelistStorage,
     },
 };
 
-use super::{AirdropLogic, TransferLogic};
+use super::{AirdropLogic, TransferLogic, DAY_IN_NANOS};
 
 pub struct ProposalLogic;
 
@@ -36,16 +36,11 @@ impl ProposalLogic {
         Ok((id, votes))
     }
 
-    pub fn get_voting_period() -> CanisterResult<u64> {
-        let nanos = VotingPeriodStorage::get()?;
-        Ok(Duration::from_nanos(nanos).as_secs())
-    }
-
-    pub fn set_voting_period(nanos_period: u64) -> CanisterResult<u64> {
-        VotingPeriodStorage::set(nanos_period)
-    }
-
-    pub async fn propose(caller: Principal, content: Content) -> CanisterResult<ProposalEntry> {
+    pub async fn propose(
+        caller: Principal,
+        content: Content,
+        voting_period: Option<u64>,
+    ) -> CanisterResult<ProposalEntry> {
         match content.clone() {
             Content::Transfer(content) => {
                 TransferLogic::check_balance(content.canister_id, &content.args.amount).await?
@@ -55,14 +50,14 @@ impl ProposalLogic {
             }
         }
 
-        let (id, proposal) = ProposalStorage::insert(Proposal::new(caller, content))?;
+        let voting_period = voting_period.unwrap_or(DAY_IN_NANOS);
 
-        set_timer(
-            Duration::from_nanos(VotingPeriodStorage::get()?),
-            move || {
-                ProposalStorage::expire(id);
-            },
-        );
+        let (id, proposal) =
+            ProposalStorage::insert(Proposal::new(caller, content, voting_period))?;
+
+        set_timer(Duration::from_nanos(voting_period), move || {
+            ProposalStorage::expire(id);
+        });
 
         VoteStorage::insert_by_key(id, Votes(vec![Vote::new(caller, VoteKind::Approve)]))?;
 

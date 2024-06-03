@@ -10,6 +10,7 @@ pub struct Proposal {
     pub status: Status,
     pub creator: Principal,
     pub sent_at: Option<u64>,
+    pub voting_period: u64,
     pub created_at: u64,
     pub content: Content,
 }
@@ -33,11 +34,12 @@ pub enum Content {
 }
 
 impl Proposal {
-    pub fn new(creator: Principal, content: Content) -> Self {
+    pub fn new(creator: Principal, content: Content, voting_period: u64) -> Self {
         Self {
             status: Status::Pending,
             creator,
             sent_at: None,
+            voting_period,
             created_at: ic_cdk::api::time(),
             content,
         }

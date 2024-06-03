@@ -8,8 +8,6 @@ use ic_stable_structures::{
 
 use types::{models::AirdropTransfers, Proposal, Votes};
 
-use crate::logic::DAY_IN_NANOS;
-
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
 /// The memory IDs for the different stores.
@@ -18,17 +16,16 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
 
-pub static VOTING_PERIOD_MEMORY_ID: MemoryId = MemoryId::new(0);
-pub static OWNER_MEMORY_ID: MemoryId = MemoryId::new(1);
-pub static MULTISIG_INDEX_MEMORY_ID: MemoryId = MemoryId::new(2);
+pub static OWNER_MEMORY_ID: MemoryId = MemoryId::new(0);
+pub static MULTISIG_INDEX_MEMORY_ID: MemoryId = MemoryId::new(1);
 
-pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(3);
+pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(2);
 
-pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(4);
+pub static AIRDROP_TRANSFERS_MEMORY_ID: MemoryId = MemoryId::new(3);
 
-pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(5);
+pub static PROPOSALS_MEMORY_ID: MemoryId = MemoryId::new(4);
 
-pub static VOTES_MEMORY_ID: MemoryId = MemoryId::new(6);
+pub static VOTES_MEMORY_ID: MemoryId = MemoryId::new(5);
 
 /// A reference to a `StableBTreeMap` that is wrapped in a `RefCell`.
 ///# Generics
@@ -41,11 +38,6 @@ type MemoryManagerStorage = RefCell<MemoryManager<DefaultMemoryImpl>>;
 thread_local! {
     pub static MEMORY_MANAGER: MemoryManagerStorage =
         RefCell::new(MemoryManager::init(DefaultMemoryImpl::default()));
-
-    pub static VOTING_PERIOD: RefCell<Cell<Option<u64>, Memory>> = RefCell::new(
-        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(VOTING_PERIOD_MEMORY_ID)), Some(DAY_IN_NANOS))
-            .expect("Failed to initialize proposal voting period")
-    );
 
     pub static OWNER: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
         Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(OWNER_MEMORY_ID)), None)
