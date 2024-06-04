@@ -17,6 +17,12 @@ impl Votes {
         self.0.push(vote);
     }
 
+    pub fn update(&mut self, voter: Principal, kind: VoteKind) {
+        if let Some(vote) = self.0.iter_mut().find(|v| v.voter == voter) {
+            vote.kind = kind;
+        }
+    }
+
     pub fn approvals(&self) -> usize {
         self.0
             .iter()

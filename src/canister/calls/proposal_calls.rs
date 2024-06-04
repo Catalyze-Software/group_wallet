@@ -19,16 +19,14 @@ pub fn get_votes(id: u64, kind: Option<VoteKind>) -> CanisterResult<VotesEntry> 
 }
 
 #[update(guard = "is_owner")]
-pub async fn propose(content: Content) -> CanisterResult<ProposalEntry> {
-    ProposalLogic::propose(caller(), content).await
+pub async fn propose(
+    content: Content,
+    voting_period: Option<u64>,
+) -> CanisterResult<ProposalEntry> {
+    ProposalLogic::propose(caller(), content, voting_period).await
 }
 
 #[update(guard = "is_whitelisted")]
 pub fn vote_proposal(id: u64, vote: VoteKind) -> CanisterResult<ProposalEntry> {
     ProposalLogic::vote(caller(), id, vote)
-}
-
-#[update(guard = "is_whitelisted")]
-pub async fn execute_proposal(id: u64) -> CanisterResult<()> {
-    ProposalLogic::execute(id).await
 }

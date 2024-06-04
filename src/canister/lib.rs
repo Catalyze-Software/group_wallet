@@ -1,7 +1,7 @@
 use candid::Principal;
 use ic_cdk::{caller, init, query};
-use logic::{WhitelistLogic, DAY_IN_NANOS};
-use storage::{CellStorage, WalletIndexStorage};
+use logic::WhitelistLogic;
+use storage::{CellStorage, MultisigIndexStorage};
 
 pub mod helpers;
 pub mod logic;
@@ -12,13 +12,8 @@ pub mod calls;
 
 #[init]
 pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
-    WalletIndexStorage::set(caller()).expect("Failed to set wallet index");
+    MultisigIndexStorage::set(caller()).expect("Failed to set multisig index");
     WhitelistLogic::init(owner, whitelisted)
-}
-
-#[query]
-fn get_time_out() -> u64 {
-    DAY_IN_NANOS
 }
 
 // Hacky way to expose the candid interface to the outside world
@@ -42,5 +37,5 @@ pub fn candid() {
 
     let dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let dir = dir.parent().unwrap().join("../candid");
-    write(dir.join("group_wallet.did"), __export_did_tmp_()).expect("Write failed.");
+    write(dir.join("multisig.did"), __export_did_tmp_()).expect("Write failed.");
 }

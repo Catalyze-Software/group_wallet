@@ -15,8 +15,9 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// These IDs are used to identify the different stores in the `MemoryManager`.
 /// # Warning
 /// These IDs should not be changed. New IDs should be added to the end of the list
+
 pub static OWNER_MEMORY_ID: MemoryId = MemoryId::new(0);
-pub static WALLET_INDEX_MEMORY_ID: MemoryId = MemoryId::new(1);
+pub static MULTISIG_INDEX_MEMORY_ID: MemoryId = MemoryId::new(1);
 
 pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(2);
 
@@ -43,9 +44,9 @@ thread_local! {
             .expect("Failed to initialize owner")
     );
 
-    pub static WALLET_INDEX: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
-        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(WALLET_INDEX_MEMORY_ID)), None)
-            .expect("Failed to initialize wallet index")
+    pub static MULTISIG_INDEX: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(MULTISIG_INDEX_MEMORY_ID)), None)
+            .expect("Failed to initialize multisig index")
     );
 
     pub static WHITELIST: StorageRef<u64, Principal> = RefCell::new(

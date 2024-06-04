@@ -36,7 +36,11 @@ impl ProposalLogic {
         Ok((id, votes))
     }
 
-    pub async fn propose(caller: Principal, content: Content) -> CanisterResult<ProposalEntry> {
+    pub async fn propose(
+        caller: Principal,
+        content: Content,
+        voting_period: Option<u64>,
+    ) -> CanisterResult<ProposalEntry> {
         match content.clone() {
             Content::Transfer(content) => {
                 TransferLogic::check_balance(content.canister_id, &content.args.amount).await?
@@ -46,10 +50,15 @@ impl ProposalLogic {
             }
         }
 
-        let (id, proposal) = ProposalStorage::insert(Proposal::new(caller, content))?;
+        let voting_period = voting_period.unwrap_or(DAY_IN_NANOS);
 
-        set_timer(Duration::from_nanos(DAY_IN_NANOS), move || {
-            ProposalStorage::expire(id);
+        let (id, proposal) =
+            ProposalStorage::insert(Proposal::new(caller, content, voting_period))?;
+
+        set_timer(Duration::from_nanos(voting_period), move || {
+            ic_cdk::spawn(async move {
+                let _ = Self::execute(id).await;
+            });
         });
 
         VoteStorage::insert_by_key(id, Votes(vec![Vote::new(caller, VoteKind::Approve)]))?;
@@ -66,31 +75,31 @@ impl ProposalLogic {
 
         let (_, mut votes) = VoteStorage::get(id)?;
 
-        if votes.voted(&caller) {
-            return Err(Error::bad_request().add_message("Vote already cast"));
+        match votes.voted(&caller) {
+            true => votes.update(caller, vote),
+            false => votes.add(Vote::new(caller, vote)),
         }
 
-        votes.add(Vote::new(caller, vote));
+        VoteStorage::update(id, votes)?;
+        ProposalStorage::get(id)
+    }
 
-        let (_, votes) = VoteStorage::update(id, votes)?;
+    async fn execute(id: u64) -> CanisterResult<()> {
+        let (_, votes) = VoteStorage::get(id)?;
 
-        match Self::get_tally_result(&votes) {
+        let (_, proposal) = match Self::get_tally_result(&votes) {
             TallyResult::Approve => ProposalStorage::approve(id),
             TallyResult::Reject => ProposalStorage::reject(id, false),
             TallyResult::Deadlock => ProposalStorage::reject(id, true),
-            TallyResult::NotReached => Ok((id, proposal)),
-        }
-    }
-
-    pub async fn execute(id: u64) -> CanisterResult<()> {
-        let (_, proposal) = ProposalStorage::get(id)?;
+            TallyResult::NotReached => ProposalStorage::expire(id),
+        }?;
 
         if proposal.status != Status::Approved {
-            return Err(Error::bad_request().add_message("Proposal is not approved"));
+            return Ok(());
         }
 
         if proposal.sent_at.is_some() {
-            return Err(Error::bad_request().add_message("Proposal already executed"));
+            return Err(Error::internal().add_message("Proposal already executed"));
         }
 
         let (id, proposal) = ProposalStorage::set_sent_at(id, time())?;

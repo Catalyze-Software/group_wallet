@@ -1,6 +1,6 @@
-# Internet Computer Group Wallet Ledger Canister
+# Internet Computer Multisig Ledger Canister
 
-This project hosts a group wallet ledger canister on the Internet Computer, designed to manage whitelist approvals, transactions, and airdrops through a voting mechanism. It allows multiple parties to participate in the decision-making process for approving critical operations within a decentralized environment.
+This project hosts a multisig ledger canister on the Internet Computer, designed to manage whitelist approvals, transactions, and airdrops through a voting mechanism. It allows multiple parties to participate in the decision-making process for approving critical operations within a decentralized environment.
 
 ## Requirements
 
@@ -13,8 +13,8 @@ This project hosts a group wallet ledger canister on the Internet Computer, desi
 Clone the repository and navigate to the directory:
 
 ```bash
-git clone https://github.com/Catalyze-Software/group_wallet.git
-cd group_wallet
+git clone https://github.com/Catalyze-Software/multisig.git
+cd multisig
 ```
 
 ## Overview
@@ -22,13 +22,13 @@ cd group_wallet
 ### Owner management
 
 Owner is the principal that has the ability to add/remove/replace users in the whitelist. Owner is
-set during the canister installation by the group wallet index canister. Owner can be changed by the
-group wallet index canister only. Any authorized user can get the owner principal.
+set during the canister installation by the multisig index canister. Owner can be changed by the
+multisig index canister only. Any authorized user can get the owner principal.
 
 ### Whitelisting
 
 Whitelisting is the process of adding a user to the whitelist. Whitelisted users can vote on
-proposals. Initially, whitelisted users are set by the group wallet index canister. Whitelisted users
+proposals. Initially, whitelisted users are set by the multisig index canister. Whitelisted users
 can be added/removed by the owner. Minimum is 2 and maximum whitelisted users amount is 3, including
 the owner.
 

@@ -38,6 +38,7 @@ type Proposal = record {
   status : Status;
   creator : principal;
   content : Content;
+  voting_period : nat64;
   created_at : nat64;
   sent_at : opt nat64;
 };
@@ -46,12 +47,11 @@ type ProposalResponse = record {
   votes : vec Vote;
   proposal : Proposal;
 };
-type Result = variant { Ok : principal; Err : Error };
-type Result_1 = variant { Ok; Err : Error };
-type Result_2 = variant { Ok : vec AirdropTransfer; Err : Error };
-type Result_3 = variant { Ok : record { nat64; vec Vote }; Err : Error };
-type Result_4 = variant { Ok : vec principal; Err : Error };
-type Result_5 = variant { Ok : record { nat64; Proposal }; Err : Error };
+type Result = variant { Ok : vec AirdropTransfer; Err : Error };
+type Result_1 = variant { Ok : principal; Err : Error };
+type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
+type Result_3 = variant { Ok : vec principal; Err : Error };
+type Result_4 = variant { Ok : record { nat64; Proposal }; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type TransferArg = record {
   to : Account;
@@ -70,17 +70,13 @@ type Vote = record { voter : principal; kind : VoteKind; created_at : nat64 };
 type VoteKind = variant { Approve; Reject };
 service : (principal, vec principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
-  add_whitelisted : (principal) -> (Result);
-  execute_proposal : (nat64) -> (Result_1);
-  get_airdrop_transfers : (nat64) -> (Result_2) query;
-  get_owner : () -> (Result) query;
+  get_airdrop_transfers : (nat64) -> (Result) query;
+  get_owner : () -> (Result_1) query;
   get_proposals : (opt Status) -> (vec ProposalResponse) query;
-  get_time_out : () -> (nat64) query;
-  get_votes : (nat64, opt VoteKind) -> (Result_3) query;
-  get_whitelist : () -> (Result_4) query;
-  propose : (Content) -> (Result_5);
-  remove_whitelisted : (principal) -> (Result_1);
-  replace_whitelisted : (vec principal) -> (Result_4);
-  set_owner : (principal) -> (Result);
-  vote_proposal : (nat64, VoteKind) -> (Result_5);
+  get_votes : (nat64, opt VoteKind) -> (Result_2) query;
+  get_whitelist : () -> (Result_3) query;
+  propose : (Content, opt nat64) -> (Result_4);
+  replace_whitelisted : (vec principal) -> (Result_3);
+  set_owner : (principal) -> (Result_1);
+  vote_proposal : (nat64, VoteKind) -> (Result_4);
 }
