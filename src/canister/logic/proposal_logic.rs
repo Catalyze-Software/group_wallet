@@ -56,7 +56,9 @@ impl ProposalLogic {
             ProposalStorage::insert(Proposal::new(caller, content, voting_period))?;
 
         set_timer(Duration::from_nanos(voting_period), move || {
-            ProposalStorage::expire(id);
+            ic_cdk::spawn(async move {
+                let _ = Self::execute(id).await;
+            });
         });
 
         VoteStorage::insert_by_key(id, Votes(vec![Vote::new(caller, VoteKind::Approve)]))?;
@@ -78,25 +80,26 @@ impl ProposalLogic {
             false => votes.add(Vote::new(caller, vote)),
         }
 
-        let (_, votes) = VoteStorage::update(id, votes)?;
+        VoteStorage::update(id, votes)?;
+        ProposalStorage::get(id)
+    }
 
-        match Self::get_tally_result(&votes) {
+    async fn execute(id: u64) -> CanisterResult<()> {
+        let (_, votes) = VoteStorage::get(id)?;
+
+        let (_, proposal) = match Self::get_tally_result(&votes) {
             TallyResult::Approve => ProposalStorage::approve(id),
             TallyResult::Reject => ProposalStorage::reject(id, false),
             TallyResult::Deadlock => ProposalStorage::reject(id, true),
-            TallyResult::NotReached => Ok((id, proposal)),
-        }
-    }
-
-    pub async fn execute(id: u64) -> CanisterResult<()> {
-        let (_, proposal) = ProposalStorage::get(id)?;
+            TallyResult::NotReached => ProposalStorage::expire(id),
+        }?;
 
         if proposal.status != Status::Approved {
-            return Err(Error::bad_request().add_message("Proposal is not approved"));
+            return Ok(());
         }
 
         if proposal.sent_at.is_some() {
-            return Err(Error::bad_request().add_message("Proposal already executed"));
+            return Err(Error::internal().add_message("Proposal already executed"));
         }
 
         let (id, proposal) = ProposalStorage::set_sent_at(id, time())?;

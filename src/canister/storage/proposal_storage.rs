@@ -27,37 +27,20 @@ impl StorageInsertable<Proposal> for ProposalStorage {}
 impl StorageUpdateable<u64, Proposal> for ProposalStorage {}
 
 impl ProposalStorage {
-    pub fn expire(id: u64) {
-        let proposal = Self::get_opt(id);
-        if proposal.is_none() {
-            return;
-        }
-
-        let (_, mut proposal) = proposal.unwrap();
-
-        if proposal.status() != Status::Pending {
-            return;
-        }
-
-        proposal.update_status(Status::Expired);
-        Self::update(id, proposal).expect("expected proposal exist");
-    }
-
     pub fn reject(id: u64, deadlock: bool) -> CanisterResult<ProposalEntry> {
-        let (_, mut proposal) = Self::get(id)?;
-
-        match deadlock {
-            true => proposal.update_status(Status::Deadlock),
-            false => proposal.update_status(Status::Rejected),
-        }
-
-        Self::update(id, proposal)
+        let status = match deadlock {
+            true => Status::Deadlock,
+            false => Status::Rejected,
+        };
+        Self::update_status(id, status)
     }
 
     pub fn approve(id: u64) -> CanisterResult<ProposalEntry> {
-        let (_, mut proposal) = Self::get(id)?;
-        proposal.update_status(Status::Approved);
-        Self::update(id, proposal)
+        Self::update_status(id, Status::Approved)
+    }
+
+    pub fn expire(id: u64) -> CanisterResult<ProposalEntry> {
+        Self::update_status(id, Status::Expired)
     }
 
     pub fn set_sent_at(id: u64, sent_at: u64) -> CanisterResult<ProposalEntry> {
@@ -77,6 +60,12 @@ impl ProposalStorage {
 
         proposals.sort_by(|(_, a), (_, b)| a.created_at.cmp(&b.created_at));
         proposals.into_iter().map(Self::map_to_response).collect()
+    }
+
+    fn update_status(id: u64, status: Status) -> CanisterResult<ProposalEntry> {
+        let (_, mut proposal) = Self::get(id)?;
+        proposal.update_status(status);
+        Self::update(id, proposal)
     }
 
     fn map_to_response(data: (u64, Proposal)) -> ProposalResponse {

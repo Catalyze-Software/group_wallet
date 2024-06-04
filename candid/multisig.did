@@ -47,12 +47,11 @@ type ProposalResponse = record {
   votes : vec Vote;
   proposal : Proposal;
 };
-type Result = variant { Ok; Err : Error };
-type Result_1 = variant { Ok : vec AirdropTransfer; Err : Error };
-type Result_2 = variant { Ok : principal; Err : Error };
-type Result_3 = variant { Ok : record { nat64; vec Vote }; Err : Error };
-type Result_4 = variant { Ok : vec principal; Err : Error };
-type Result_5 = variant { Ok : record { nat64; Proposal }; Err : Error };
+type Result = variant { Ok : vec AirdropTransfer; Err : Error };
+type Result_1 = variant { Ok : principal; Err : Error };
+type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
+type Result_3 = variant { Ok : vec principal; Err : Error };
+type Result_4 = variant { Ok : record { nat64; Proposal }; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
 type TransferArg = record {
   to : Account;
@@ -71,14 +70,13 @@ type Vote = record { voter : principal; kind : VoteKind; created_at : nat64 };
 type VoteKind = variant { Approve; Reject };
 service : (principal, vec principal) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
-  execute_proposal : (nat64) -> (Result);
-  get_airdrop_transfers : (nat64) -> (Result_1) query;
-  get_owner : () -> (Result_2) query;
+  get_airdrop_transfers : (nat64) -> (Result) query;
+  get_owner : () -> (Result_1) query;
   get_proposals : (opt Status) -> (vec ProposalResponse) query;
-  get_votes : (nat64, opt VoteKind) -> (Result_3) query;
-  get_whitelist : () -> (Result_4) query;
-  propose : (Content, opt nat64) -> (Result_5);
-  replace_whitelisted : (vec principal) -> (Result_4);
-  set_owner : (principal) -> (Result_2);
-  vote_proposal : (nat64, VoteKind) -> (Result_5);
+  get_votes : (nat64, opt VoteKind) -> (Result_2) query;
+  get_whitelist : () -> (Result_3) query;
+  propose : (Content, opt nat64) -> (Result_4);
+  replace_whitelisted : (vec principal) -> (Result_3);
+  set_owner : (principal) -> (Result_1);
+  vote_proposal : (nat64, VoteKind) -> (Result_4);
 }

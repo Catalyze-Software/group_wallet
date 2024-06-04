@@ -30,8 +30,3 @@ pub async fn propose(
 pub fn vote_proposal(id: u64, vote: VoteKind) -> CanisterResult<ProposalEntry> {
     ProposalLogic::vote(caller(), id, vote)
 }
-
-#[update(guard = "is_whitelisted")]
-pub async fn execute_proposal(id: u64) -> CanisterResult<()> {
-    ProposalLogic::execute(id).await
-}
