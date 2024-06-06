@@ -1,7 +1,8 @@
 use candid::Principal;
 use ic_cdk::{caller, init, query};
 use logic::WhitelistLogic;
-use storage::{CellStorage, MultisigIndexStorage};
+use storage::{metadata_storage::MetadataStorage, CellStorage};
+use types::Metadata;
 
 pub mod helpers;
 pub mod logic;
@@ -11,8 +12,8 @@ pub mod storage;
 pub mod calls;
 
 #[init]
-pub fn init(owner: Principal, whitelisted: Vec<Principal>) {
-    MultisigIndexStorage::set(caller()).expect("Failed to set multisig index");
+pub fn init(owner: Principal, whitelisted: Vec<Principal>, proxy: Principal, group_id: u64) {
+    MetadataStorage::set(Metadata::new(group_id, proxy, caller())).expect("Failed to set metadata");
     WhitelistLogic::init(owner, whitelisted)
 }
 

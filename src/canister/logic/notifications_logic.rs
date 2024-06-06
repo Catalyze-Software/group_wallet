@@ -1,6 +1,6 @@
-use ic_cdk::{api::call::CallResult, call, id};
+use ic_cdk::{api::call::CallResult, call};
 
-use crate::storage::{CellStorage, MultisigIndexStorage};
+use crate::storage::{metadata_storage::MetadataStorage, CellStorage};
 
 use super::WhitelistLogic;
 
@@ -9,11 +9,11 @@ pub struct NotificationLogic;
 impl NotificationLogic {
     pub async fn send_whitelist_notice() {
         if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
-            if let Ok(index) = MultisigIndexStorage::get() {
+            if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
-                    index,
+                    metadata.index_canister,
                     "multisig_whitelist_notice_notification",
-                    (whitelist, id()),
+                    (whitelist, metadata.group_id),
                 )
                 .await;
             }
@@ -22,11 +22,11 @@ impl NotificationLogic {
 
     pub async fn send_accept_proposal(proposal_id: u64) {
         if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
-            if let Ok(index) = MultisigIndexStorage::get() {
+            if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
-                    index,
+                    metadata.index_canister,
                     "multisig_proposal_accept_notification",
-                    (whitelist, id(), proposal_id),
+                    (whitelist, proposal_id, metadata.group_id),
                 )
                 .await;
             }
@@ -35,11 +35,11 @@ impl NotificationLogic {
 
     pub async fn send_decline_proposal(proposal_id: u64) {
         if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
-            if let Ok(index) = MultisigIndexStorage::get() {
+            if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
-                    index,
+                    metadata.index_canister,
                     "multisig_proposal_decline_notification",
-                    (whitelist, id(), proposal_id),
+                    (whitelist, proposal_id, metadata.group_id),
                 )
                 .await;
             }
@@ -48,11 +48,11 @@ impl NotificationLogic {
 
     pub async fn send_update_proposal(proposal_id: u64) {
         if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
-            if let Ok(index) = MultisigIndexStorage::get() {
+            if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
-                    index,
+                    metadata.index_canister,
                     "multisig_proposal_status_update_notification",
-                    (whitelist, id(), proposal_id),
+                    (whitelist, proposal_id, metadata.group_id),
                 )
                 .await;
             }
@@ -61,11 +61,11 @@ impl NotificationLogic {
 
     pub async fn send_new_proposal(proposal_id: u64) {
         if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
-            if let Ok(index) = MultisigIndexStorage::get() {
+            if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
-                    index,
+                    metadata.index_canister,
                     "multisig_new_proposal_notification",
-                    (whitelist, id(), proposal_id),
+                    (whitelist, proposal_id, metadata.group_id),
                 )
                 .await;
             }

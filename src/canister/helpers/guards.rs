@@ -4,7 +4,8 @@ use ic_cdk::caller;
 use types::Error;
 
 use crate::storage::{
-    CellStorage, OwnerStorage, StorageQueryable, WhitelistStorage, MULTISIG_INDEX,
+    metadata_storage::MetadataStorage, CellStorage, OwnerStorage, StorageQueryable,
+    WhitelistStorage,
 };
 
 pub fn is_authorized() -> Result<(), String> {
@@ -50,15 +51,8 @@ pub fn is_owner() -> Result<(), String> {
 pub fn is_wallet_index() -> Result<(), String> {
     is_authorized()?;
 
-    let wallet_index = MULTISIG_INDEX
-        .with(|w| {
-            w.borrow()
-                .get()
-                .ok_or_else(|| Error::internal().add_message("Wallet index not set"))
-        })
-        .map_err(|e| e.to_string())?;
-
-    if caller() == wallet_index {
+    let metadata = MetadataStorage::get().map_err(|_| "Failed to get metadata")?;
+    if caller() == metadata.index_canister {
         return Ok(());
     }
 
