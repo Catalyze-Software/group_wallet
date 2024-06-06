@@ -1,4 +1,4 @@
-use ic_cdk::{api::call::CallResult, call};
+use ic_cdk::{api::call::CallResult, call, caller};
 
 use crate::storage::{metadata_storage::MetadataStorage, CellStorage};
 
@@ -8,7 +8,8 @@ pub struct NotificationLogic;
 
 impl NotificationLogic {
     pub async fn send_whitelist_notice() {
-        if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
+        if let Ok(mut whitelist) = WhitelistLogic::get_whitelist() {
+            whitelist.retain(|x| x != &caller());
             if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
                     metadata.index_canister,
@@ -21,7 +22,8 @@ impl NotificationLogic {
     }
 
     pub async fn send_accept_proposal(proposal_id: u64) {
-        if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
+        if let Ok(mut whitelist) = WhitelistLogic::get_whitelist() {
+            whitelist.retain(|x| x != &caller());
             if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
                     metadata.index_canister,
@@ -34,7 +36,8 @@ impl NotificationLogic {
     }
 
     pub async fn send_decline_proposal(proposal_id: u64) {
-        if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
+        if let Ok(mut whitelist) = WhitelistLogic::get_whitelist() {
+            whitelist.retain(|x| x != &caller());
             if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
                     metadata.index_canister,
@@ -47,7 +50,8 @@ impl NotificationLogic {
     }
 
     pub async fn send_update_proposal(proposal_id: u64) {
-        if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
+        if let Ok(mut whitelist) = WhitelistLogic::get_whitelist() {
+            whitelist.retain(|x| x != &caller());
             if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
                     metadata.index_canister,
@@ -60,7 +64,9 @@ impl NotificationLogic {
     }
 
     pub async fn send_new_proposal(proposal_id: u64) {
-        if let Ok(whitelist) = WhitelistLogic::get_whitelist() {
+        if let Ok(mut whitelist) = WhitelistLogic::get_whitelist() {
+            whitelist.retain(|x| x != &caller());
+
             if let Ok(metadata) = MetadataStorage::get() {
                 let _: CallResult<((),)> = call(
                     metadata.index_canister,
