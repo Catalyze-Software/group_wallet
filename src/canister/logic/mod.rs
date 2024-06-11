@@ -1,5 +1,6 @@
 pub mod airdrop_logic;
 pub mod consts;
+pub mod notifications_logic;
 pub mod owner_logic;
 pub mod proposal_logic;
 pub mod transfer_logic;

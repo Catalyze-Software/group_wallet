@@ -6,7 +6,7 @@ use ic_stable_structures::{
     Cell, DefaultMemoryImpl, StableBTreeMap,
 };
 
-use types::{models::AirdropTransfers, Proposal, Votes};
+use types::{models::AirdropTransfers, Metadata, Proposal, Votes};
 
 pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 
@@ -17,7 +17,7 @@ pub type Memory = VirtualMemory<DefaultMemoryImpl>;
 /// These IDs should not be changed. New IDs should be added to the end of the list
 
 pub static OWNER_MEMORY_ID: MemoryId = MemoryId::new(0);
-pub static MULTISIG_INDEX_MEMORY_ID: MemoryId = MemoryId::new(1);
+pub static METADATA_MEMORY_ID: MemoryId = MemoryId::new(1);
 
 pub static WHITELIST_MEMORY_ID: MemoryId = MemoryId::new(2);
 
@@ -44,10 +44,11 @@ thread_local! {
             .expect("Failed to initialize owner")
     );
 
-    pub static MULTISIG_INDEX: RefCell<Cell<Option<Principal>, Memory>> = RefCell::new(
-        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(MULTISIG_INDEX_MEMORY_ID)), None)
-            .expect("Failed to initialize multisig index")
+    pub static METADATA: RefCell<Cell<Option<Metadata>, Memory>> = RefCell::new(
+        Cell::init(MEMORY_MANAGER.with(|p| p.borrow().get(METADATA_MEMORY_ID)), None)
+            .expect("Failed to initialize metadata")
     );
+
 
     pub static WHITELIST: StorageRef<u64, Principal> = RefCell::new(
         StableBTreeMap::init(MEMORY_MANAGER.with(|p| p.borrow().get(WHITELIST_MEMORY_ID)))

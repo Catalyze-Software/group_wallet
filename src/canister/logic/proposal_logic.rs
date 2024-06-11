@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use candid::Principal;
-use ic_cdk::api::time;
+use ic_cdk::{api::time, spawn};
 use ic_cdk_timers::set_timer;
 use types::{
     Content, Error, Proposal, ProposalEntry, ProposalResponse, Status, TallyResult, Vote, VoteKind,
@@ -16,7 +16,7 @@ use crate::{
     },
 };
 
-use super::{AirdropLogic, TransferLogic, DAY_IN_NANOS};
+use super::{notifications_logic::NotificationLogic, AirdropLogic, TransferLogic, DAY_IN_NANOS};
 
 pub struct ProposalLogic;
 
@@ -56,11 +56,12 @@ impl ProposalLogic {
             ProposalStorage::insert(Proposal::new(caller, content, voting_period))?;
 
         set_timer(Duration::from_nanos(voting_period), move || {
-            ic_cdk::spawn(async move {
+            spawn(async move {
                 let _ = Self::execute(id).await;
             });
         });
 
+        spawn(NotificationLogic::send_new_proposal(id));
         VoteStorage::insert_by_key(id, Votes(vec![Vote::new(caller, VoteKind::Approve)]))?;
 
         Ok((id, proposal))
@@ -80,6 +81,7 @@ impl ProposalLogic {
             false => votes.add(Vote::new(caller, vote)),
         }
 
+        spawn(NotificationLogic::send_update_proposal(id));
         VoteStorage::update(id, votes)?;
         ProposalStorage::get(id)
     }
@@ -95,6 +97,7 @@ impl ProposalLogic {
         }?;
 
         if proposal.status != Status::Approved {
+            spawn(NotificationLogic::send_decline_proposal(id));
             return Ok(());
         }
 
@@ -103,6 +106,8 @@ impl ProposalLogic {
         }
 
         let (id, proposal) = ProposalStorage::set_sent_at(id, time())?;
+
+        spawn(NotificationLogic::send_accept_proposal(id));
 
         match proposal.content {
             Content::Transfer(content) => TransferLogic::execute_transfer(content).await,

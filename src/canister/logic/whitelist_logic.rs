@@ -1,5 +1,8 @@
+use std::time::Duration;
+
 use candid::Principal;
-use ic_cdk::trap;
+use ic_cdk::{spawn, trap};
+use ic_cdk_timers::set_timer;
 use types::{Error, ValidateField, ValidationType};
 
 use crate::{
@@ -8,7 +11,7 @@ use crate::{
     storage::{CellStorage, OwnerStorage, StorageInsertable, StorageQueryable, WhitelistStorage},
 };
 
-use super::{MAX_WHITELISTED, MIN_WHITELISTED};
+use super::{notifications_logic::NotificationLogic, MAX_WHITELISTED, MIN_WHITELISTED};
 
 pub struct WhitelistLogic;
 
@@ -47,6 +50,10 @@ impl WhitelistLogic {
         for principal in whitelisted {
             WhitelistStorage::insert(principal).expect("Failed to insert principal");
         }
+
+        set_timer(Duration::from_secs(1), || {
+            spawn(NotificationLogic::send_whitelist_notice())
+        });
     }
 
     pub fn get_whitelist() -> CanisterResult<Vec<Principal>> {
@@ -92,6 +99,9 @@ impl WhitelistLogic {
             .into_iter()
             .chain(whitelisted)
             .collect();
+
+        spawn(NotificationLogic::send_whitelist_notice());
+
         Ok(whitelisted)
     }
 }
