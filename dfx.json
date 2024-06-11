@@ -1,9 +1,14 @@
 {
   "canisters": {
     "multisig": {
+      "type": "custom",
+      "package": "multisig",
       "candid": "candid/multisig.did",
-      "type": "rust",
-      "package": "multisig"
+      "wasm": "wasm/multisig.wasm.gz",
+      "optimize": "O3",
+      "build": [
+        "bash scripts/build.sh"
+      ]
     }
   }
 }

@@ -1,35 +1,58 @@
 type Account = record { owner : principal; subaccount : opt blob };
-type AirdropRequestData = record {
-  data : SharedData;
+type AirdropProposalContent = record {
+  args : vec TransferArg;
   canister_id : principal;
-  tranfer_args : vec TransferRequestType;
 };
-type AirdropTransactionDetails = record {
+type AirdropTransfer = record {
   status : Status;
   canister_id : principal;
-  token_standard : TokenStandard;
-  amount : Amount;
+  amount : nat;
   receiver : principal;
 };
-type Amount = variant { ICRC1 : nat; DIP20 : nat64 };
-type Dip20TransferArgs = record { to : principal; amount : nat64 };
-type Result = variant { Ok; Err : text };
-type Result_1 = variant { Ok : text; Err : text };
-type Result_2 = variant { Ok : vec AirdropTransactionDetails; Err : text };
-type SharedData = record {
-  id : nat32;
+type Content = variant {
+  Airdrop : AirdropProposalContent;
+  Transfer : TransferProposalContent;
+};
+type Error = record {
+  tag : opt text;
+  info : opt vec text;
+  method_name : opt text;
+  message : opt text;
+  timestamp : nat64;
+  error_type : ErrorKind;
+};
+type ErrorKind = variant {
+  Internal;
+  Duplicate;
+  SerializeError;
+  DeserializeError;
+  InsufficientBalance;
+  NotFound;
+  ValidationError : vec ValidationResponse;
+  Unsupported;
+  Unauthorized;
+  NotImplemented;
+  BadRequest;
+};
+type Proposal = record {
   status : Status;
-  votes : Votes;
+  creator : principal;
+  content : Content;
+  voting_period : nat64;
   created_at : nat64;
-  requested_by : principal;
+  sent_at : opt nat64;
 };
+type ProposalResponse = record {
+  id : nat64;
+  votes : vec Vote;
+  proposal : Proposal;
+};
+type Result = variant { Ok : vec AirdropTransfer; Err : Error };
+type Result_1 = variant { Ok : principal; Err : Error };
+type Result_2 = variant { Ok : record { nat64; vec Vote }; Err : Error };
+type Result_3 = variant { Ok : vec principal; Err : Error };
+type Result_4 = variant { Ok : record { nat64; Proposal }; Err : Error };
 type Status = variant { Deadlock; Approved; Rejected; Expired; Pending };
-type TokenStandard = variant { ICRC1; DIP20 };
-type TransactionRequestData = record {
-  args : TransferRequestType;
-  data : SharedData;
-  canister_id : principal;
-};
 type TransferArg = record {
   to : Account;
   fee : opt nat;
@@ -38,33 +61,22 @@ type TransferArg = record {
   created_at_time : opt nat64;
   amount : nat;
 };
-type TransferRequestType = variant {
-  ICRC1 : TransferArg;
-  DIP20 : Dip20TransferArgs;
+type TransferProposalContent = record {
+  args : TransferArg;
+  canister_id : principal;
 };
-type VoteType = variant { Approve; Reject };
-type Votes = record { rejections : vec principal; approvals : vec principal };
-type WhitelistRequestData = record {
-  request_type : WhitelistRequestType;
-  data : SharedData;
-};
-type WhitelistRequestType = variant { Add : principal; Remove : principal };
-service : (principal) -> {
+type ValidationResponse = record { field : text; message : text };
+type Vote = record { voter : principal; kind : VoteKind; created_at : nat64 };
+type VoteKind = variant { Approve; Reject };
+service : (principal, vec principal, principal, nat64) -> {
   __get_candid_interface_tmp_hack : () -> (text) query;
-  add_token_to_list : (principal, TokenStandard) -> (Result);
-  airdrop_request : (principal, vec TransferRequestType) -> (Result_1);
-  get_airdrop_error : (nat32) -> (Result_1) query;
-  get_airdrop_requests : (opt Status) -> (vec AirdropRequestData) query;
-  get_airdrop_transactions : (nat32) -> (Result_2) query;
-  get_time_out : () -> (nat64) query;
-  get_token_list : () -> (vec record { principal; TokenStandard }) query;
-  get_transaction_requests : (opt Status) -> (vec TransactionRequestData) query;
-  get_whitelist : () -> (vec principal) query;
-  get_whitelist_requests : (opt Status) -> (vec WhitelistRequestData) query;
-  remove_token_from_list : (principal) -> (Result);
-  transaction_request : (principal, TransferRequestType) -> (Result_1);
-  vote_on_airdrop_request : (nat32, VoteType) -> (Result_1);
-  vote_on_transaction_request : (nat32, VoteType) -> (Result_1);
-  vote_on_whitelist_request : (nat32, VoteType) -> (Result_1);
-  whitelist_request : (WhitelistRequestType) -> (Result_1);
+  get_airdrop_transfers : (nat64) -> (Result) query;
+  get_owner : () -> (Result_1) query;
+  get_proposals : (opt Status) -> (vec ProposalResponse) query;
+  get_votes : (nat64, opt VoteKind) -> (Result_2) query;
+  get_whitelist : () -> (Result_3) query;
+  propose : (Content, opt nat64) -> (Result_4);
+  replace_whitelisted : (vec principal) -> (Result_3);
+  set_owner : (principal) -> (Result_1);
+  vote_proposal : (nat64, VoteKind) -> (Result_4);
 }

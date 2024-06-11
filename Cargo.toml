@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "src",
+    "src/canister", "src/types"
 ]
 
 resolver = "2"
